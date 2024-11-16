@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss";
+import {Config} from "tailwindcss"
 
 export default {
   content: [
@@ -11,6 +11,8 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+      }, fontFamily: {
+        spartan: ['League Spartan', 'sans-serif'],
       },
     },
   },
