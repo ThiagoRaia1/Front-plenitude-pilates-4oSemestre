@@ -4,9 +4,12 @@ import { useState } from "react";
 const Page = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const[isbuscarfuncionario, setisbuscarfuncionario] = useState(false)
   const cadFunc = () => {
     setIsModalOpen(!isModalOpen);
+  }
+  const buscar = () => {
+    setisbuscarfuncionario(!isbuscarfuncionario);
   }
     return (
       
@@ -49,7 +52,7 @@ const Page = () => {
 <div className=" bg-no-repeat bg-cover  " style={{ backgroundImage: "url('fundo.png')" }}>
      <div className="flex flex justify-end gap-4">
   <button  onClick={cadFunc} className=" bg-blue-500 text-white rounded hover:bg-blue-600">Editar</button>
-  <button  className=" bg-blue-500 text-white rounded hover:bg-blue-600">Buscar Aulas</button>
+  <button  onClick={buscar} className=" bg-blue-500 text-white rounded hover:bg-blue-600">Buscar Aulas</button>
   </div>
 
 
@@ -186,6 +189,35 @@ const Page = () => {
             >
               Fechar
             </button>
+            </div>
+        
+        
+      )}
+        {isbuscarfuncionario && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
+          <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
+            <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
+
+           
+   
+           
+                
+                    <div className="mt-[200px] ml-[250px]">
+                        <label htmlFor="first_name" className="  text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">Escolha o nome do Funcionario que quer encontrar:</label>
+                        <input type="text" id="first_name" className="ml-4 w-[400] mt-8 rounded-lg border py-2 px-3"/>
+                    </div>
+                    
+                
+                <div className=" mt-40  px-8 flex justify-end gap-4">
+                <button onClick={buscar} className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Cancelar</button>
+                <button className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Salvar</button>
+          
+                </div>
+           
+        
+    </div>
+</div>
+
             </div>
         
         
