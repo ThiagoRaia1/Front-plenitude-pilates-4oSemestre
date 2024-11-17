@@ -301,36 +301,43 @@ const Page = () => {
               </div>
             )}
 
-            {isbuscar && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
-                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
-                  <div className=" w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
-                    <div className="w-full  mx-auto mt-8">
-                      <div className="mb-6">
-                        <div className="center">
-                          <div>
-                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Nome:</label>
-                            <input type="text" id="first_name" className="w-80 rounded-lg border py-2 px-3" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-17 flex justify-end gap-4">
-                        <button className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Cancelar</button>
-                        <button className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Salvar</button>
-                      </div>
+{isbuscar && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
+          <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
+            <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
+
+           
+   
+           
+                
+                    <div className="mt-[200px] ml-[250px]">
+                        <label htmlFor="first_name" className=" ml-4 text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">Escolha o nome do Aluno que quer encontrar:</label>
+                        <input type="text" id="first_name" className="ml-3 w-[400] mt-8 rounded-lg border py-2 px-3"/>
                     </div>
-                  </div>
+                    
+                
+                <div className=" mt-40  px-8 flex justify-end gap-4">
+                <button onClick={buscar} className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Cancelar</button>
+                <button className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Salvar</button>
+          
                 </div>
-                <button
-                  onClick={buscar}
-                  className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                >
-                  Fechar
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+           
+        
+    </div>
+</div>
+
+            </div>
+        
+        
+      )}
+  
+    </div>
+    
+    
+    
+</div>
+        
+       
       </div>
     </section>
   )
