@@ -5,7 +5,7 @@ export interface ITodo {
     nome: string
     status: string
     nivelDeAcesso: number
-  }
+}
   
 
 export const getTodos = async (): Promise<ITodo[]> => {
