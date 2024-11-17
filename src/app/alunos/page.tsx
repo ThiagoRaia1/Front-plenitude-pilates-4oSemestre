@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react";
-import { callCreate } from "./api";
+import { callCreate, getAluno, IAluno } from "./api";
 
 const Page = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,17 +19,45 @@ const Page = () => {
   const [numeroRua, setNumeroRua] = useState('')
   const [numeroCasa, setNumeroCasa] = useState('')
 
+  const [aluno, setAluno] = useState<IAluno | null>(null); // Inicialmente vazio
+  const [buscaCpf, setBuscaCpf] = useState('')
 
   const abreFechaJanelaCadastro = () => {
     setIsModalOpen(!isModalOpen);
   }
-  const buscar = () => {
+  const buscarAluno = () => {
     setisbuscar(!isbuscar);
   }
 
+  const handlePesquisar = async () => {
+    try {
+      setAluno(await getAluno(buscaCpf))
+      if (aluno != null) {
+        setisbuscar(!isbuscar); // Fecha a janela de busca de aluno por cpf
+        setIsModalOpen(!isModalOpen); // Abre a janela de registro de aluno para exibir os dados, alterar para uma nova janela de exibicao apenas
+        // Exibe os dados na janela
+        setNome(aluno.nome)
+        setDia(new Date (aluno.dataNascimento).getUTCDate().toString())
+        setMes(new Date (aluno.dataNascimento).getUTCMonth().toString())
+        setAno(new Date (aluno.dataNascimento).getUTCFullYear().toString())
+        setCpf(aluno.cpf)
+        setRua(aluno.rua)
+        setTelefone(aluno.telefone)
+        setBairro(aluno.bairro)
+        setCep(aluno.cep)
+        setCidade(aluno.cidade)
+        setNumeroRua(aluno.numeroRua.toString())
+        setNumeroCasa(aluno.numeroCasa.toString())
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  };
+
   const registraAluno = async () => {
     try {
-      const dataNascimento = new Date(parseInt(ano, 10), parseInt(mes, 10), parseInt(dia, 10))
+      // Subtrai 1 do mês por causa do índice. Ex: mes[0] = janeiro, mes[1] = fevereiro [...]
+      const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia))
       await callCreate(
         {
           nome,
@@ -39,8 +67,9 @@ const Page = () => {
           status: "Ativo",
           ultimaAlteracao: "a", // usuario logado
           dataUltimaAlteracao: new Date(),
-          numeroRua: 0, // inserir campo na interface
-          numeroCasa: 0,  // inserir campo na interface
+          rua, 
+          numeroRua: 0,
+          numeroCasa: 0, 
           cep,
           bairro,
           cidade
@@ -103,11 +132,18 @@ const Page = () => {
               Registrar novo aluno
             </button>
             <button
+              onClick={buscarAluno}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Editar registro
             </button>
             <button
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[100px]">
+              onClick={buscarAluno}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              Excluir aluno
+            </button>
+            <button
+              onClick={buscarAluno}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[90px]">
               Pesquisar aluno
             </button>
           </div>
@@ -301,43 +337,42 @@ const Page = () => {
               </div>
             )}
 
-{isbuscar && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
-          <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
-            <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
-
-           
-   
-           
-                
-                    <div className="mt-[200px] ml-[250px]">
-                        <label htmlFor="first_name" className=" ml-4 text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">Escolha o nome do Aluno que quer encontrar:</label>
-                        <input type="text" id="first_name" className="ml-3 w-[400] mt-8 rounded-lg border py-2 px-3"/>
+            {isbuscar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
+                  <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <label 
+                        htmlFor="first_name" 
+                        className=" ml-4 text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">
+                        Digite o CPF do aluno que quer encontrar:
+                        </label>
+                      <input 
+                        type="text" 
+                        id="first_name"
+                        value={buscaCpf}
+                        onChange={(e) => setBuscaCpf(e.target.value)}
+                        className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3" 
+                      />
+                      <div className="flex mt-10 gap-4">
+                        <button 
+                          onClick={handlePesquisar} 
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Pesquisar
+                        </button>
+                        <button 
+                          onClick={buscarAluno} 
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700 ">
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
-                    
-                
-                <div className=" mt-40  px-8 flex justify-end gap-4">
-                <button onClick={buscar} className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Cancelar</button>
-                <button className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Salvar</button>
-          
+                  </div>
                 </div>
-           
-        
-    </div>
-</div>
-
-            </div>
-        
-        
-      )}
-  
-    </div>
-    
-    
-    
-</div>
-        
-       
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   )
