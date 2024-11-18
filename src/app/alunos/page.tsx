@@ -1,6 +1,15 @@
 "use client"
-import { useState } from "react";
-import { callCreate, getAluno, IAluno } from "./api";
+import { useEffect, useState } from "react";
+import { callCreate, getAluno, getTodos, IAluno, ICreateAluno } from "./api";
+
+function formataDataBr(data: Date) {
+  const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
+  const mes = (data.getUTCMonth() + 1).toString().padStart(2, '0'); // Ajusta o mês (adiciona 1)
+  const ano = data.getUTCFullYear().toString();
+
+  const dataFormatada = `${dia}/${mes}/${ano}`;
+  return dataFormatada;
+}
 
 const Page = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,13 +28,23 @@ const Page = () => {
   const [numeroRua, setNumeroRua] = useState('')
   const [numeroCasa, setNumeroCasa] = useState('')
 
-  const [aluno, setAluno] = useState<IAluno | null>(null); // Inicialmente vazio
+  const [aluno, setAluno] = useState<ICreateAluno | null>(null); // Inicialmente vazio
   const [buscaCpf, setBuscaCpf] = useState('')
+
+  const [todos, setTodos] = useState<IAluno[]>([]) // Inicializa o estado com um array vazio
+  
+  useEffect(() => {
+    const fetchTodos = async () => {
+      const data = await getTodos()
+      setTodos(data) // Atualiza o estado com os dados obtidos
+    }
+    fetchTodos() // Chama a função fetchTodos
+  })
 
   const abreFechaJanelaCadastro = () => {
     setIsModalOpen(!isModalOpen);
   }
-  const buscarAluno = () => {
+  const abreFechaJanelaPesquisarAluno = () => {
     setisbuscar(!isbuscar);
   }
 
@@ -132,56 +151,63 @@ const Page = () => {
               Registrar novo aluno
             </button>
             <button
-              onClick={buscarAluno}
+              onClick={abreFechaJanelaPesquisarAluno}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Editar registro
             </button>
             <button
-              onClick={buscarAluno}
+              onClick={abreFechaJanelaPesquisarAluno}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Excluir aluno
             </button>
             <button
-              onClick={buscarAluno}
+              onClick={abreFechaJanelaPesquisarAluno}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[90px]">
               Pesquisar aluno
             </button>
           </div>
-
           <div>
-            <table className="w-full border-collapse border border-blue-500 max-w-xl mt-16 mx-auto">
+            <table
+            className="bg-white w-full max-w-xl mt-16 mx-auto
+                      [&_td]:border-collapse [&_td]:border [&_td]:border-blue-500
+                      [&_th]:border-collapse [&_th]:border [&_th]:border-black [&_th]:py-2 [&_th]:px-4 [&_th]:text-centered">
               <thead>
                 <tr className="bg-blue-500 text-white">
-                  <th className="py-2 px-4 text-centered">ID</th>
-                  <th className="py-2 px-4 text-centered">CPF</th>
-                  <th className="py-2 px-4 text-centered">Status</th>
-                  <th className="py-2 px-4 text-centered">Ultima Alteracao</th>
-                  <th className="py-2 px-4 text-centered">Data da Ultima Alteracao</th>
-                  <th className="py-2 px-4 text-centered">Numero Rua</th>
-                  <th className="py-2 px-4 text-centered">Numero Casa</th>
-                  <th className="py-2 px-4 text-centered">CEP</th>
-                  <th className="py-2 px-4 text-centered">Bairro</th>
-                  <th className="py-2 px-4 text-centered">Cidade</th>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Data de nascimento</th>
+                  <th>CPF</th>
+                  <th>Status</th>
+                  <th>Última Alteração</th>
+                  <th>Data da Última Alteração</th>
+                  <th>Número Rua</th>
+                  <th>Número Casa</th>
+                  <th>CEP</th>
+                  <th>Bairro</th>
+                  <th>Cidade</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="bg-white border-b border-blue-500 ">
-                  <td className="py-2 px-4 ">John Doe</td>
-                  <td className="py-2 px-4">25</td>
-                  <td className="py-2 px-4">New York</td>
-                </tr>
-                <tr className="bg-white border-b border-blue-500">
-                  <td className="py-2 px-4">Jane Smith</td>
-                  <td className="py-2 px-4">30</td>
-                  <td className="py-2 px-4">Los Angeles</td>
-                </tr>
-                <tr className="bg-white border-b border-blue-500">
-                  <td className="py-2 px-4">Bob Johnson</td>
-                  <td className="py-2 px-4">40</td>
-                  <td className="py-2 px-4">Chicago</td>
-                </tr>
+                {todos.map((todo) => (
+                  <tr className="text-black text-center align-middle"
+                    key={todo.id}>
+                    <td>{todo.id}</td>
+                    <td>{todo.nome}</td>
+                    <td>{formataDataBr(new Date(todo.dataNascimento))}</td>
+                    <td>{todo.cpf}</td>
+                    <td>{todo.status}</td>
+                    <td>{todo.ultimaAlteracao}</td>
+                    <td>{formataDataBr(new Date(todo.dataUltimaAlteracao))}</td>
+                    <td>{todo.numeroRua}</td>
+                    <td>{todo.numeroCasa}</td>
+                    <td>{todo.cep}</td>
+                    <td>{todo.bairro}</td>
+                    <td>{todo.cidade}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+
 
             {isModalOpen && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
@@ -361,7 +387,7 @@ const Page = () => {
                           Pesquisar
                         </button>
                         <button 
-                          onClick={buscarAluno} 
+                          onClick={abreFechaJanelaPesquisarAluno} 
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700 ">
                           Cancelar
                         </button>

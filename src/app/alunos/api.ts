@@ -1,4 +1,4 @@
-export interface IAluno {
+export interface ICreateAluno {
   nome: string
   dataNascimento: Date
   cpf: string
@@ -14,7 +14,24 @@ export interface IAluno {
   cidade: string;
 }
 
-export const callCreate = async (data: IAluno): Promise<IAluno> => {
+export interface IAluno {
+  id: number
+  nome: string
+  dataNascimento: Date
+  cpf: string
+  rua: string
+  telefone: string
+  status: string
+  ultimaAlteracao: string
+  dataUltimaAlteracao: Date
+  numeroRua: number;
+  numeroCasa: number;
+  cep: string;
+  bairro: string;
+  cidade: string;
+}
+
+export const callCreate = async (data: ICreateAluno): Promise<ICreateAluno> => {
   const response = await fetch('http://localhost:3001/alunos', {
     method: 'POST',
     headers: {
@@ -29,6 +46,11 @@ export const callCreate = async (data: IAluno): Promise<IAluno> => {
     throw new Error(`Erro ao criar aluno: ${response.statusText}`);
   }
 
+  return await response.json()
+}
+
+export const getTodos = async (): Promise<IAluno[]> => {
+  const response = await fetch('http://localhost:3001/alunos')
   return await response.json()
 }
 
