@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
-import { callCreate, getAluno, getTodos, IAluno, ICreateAluno } from "./api";
+import { callCreate, getAluno, getTodos, IAluno, ICreateAluno, updateAluno } from "./api";
 import { useAuth } from "@/context/auth";
 
 function formataDataBr(data: Date) {
@@ -16,7 +16,12 @@ const Page = () => {
   const { usuario, isAuthenticated, logout } = useAuth();
 
   const [isJanelaCadastro, setIsJanelaCadastro] = useState(false);
-  const [isPuscarPesquisa, setIsPuscarPesquisa] = useState(false);
+
+  const [isJanelaDadosAlunoPesquisado, setIsJanelaDadosAlunoPesquisado] = useState(false);
+  const [isBuscarPesquisa, setIsBuscarPesquisa] = useState(false);
+
+  const [isBuscarEditar, setIsBuscarEditar] = useState(false);
+  const [isJanelaEditarAluno, setIsJanelaEditarAluno] = useState(false);
 
   const [nome, setNome] = useState('')
   const [dia, setDia] = useState('')
@@ -33,6 +38,7 @@ const Page = () => {
 
   const [aluno, setAluno] = useState<ICreateAluno | null>(null); // Inicialmente vazio
   const [buscaCpf, setBuscaCpf] = useState('')
+  const [cpfAtual, setCpfAtual] = useState('')
 
   const [todos, setTodos] = useState<IAluno[]>([]) // Inicializa o estado com um array vazio
 
@@ -44,24 +50,55 @@ const Page = () => {
     fetchTodos() // Chama a função fetchTodos
   })
 
+  function limpaCampos() {
+    setNome('')
+    setDia('')
+    setMes('')
+    setAno('')
+    setCpf('')
+    setRua('')
+    setTelefone('')
+    setBairro('')
+    setCep('')
+    setCidade('')
+    setNumeroRua('')
+    setNumeroCasa('')
+    setAluno(null)
+  }
+
   const abreFechaJanelaCadastro = () => {
+    limpaCampos()
     setIsJanelaCadastro(!isJanelaCadastro);
   }
+
+  const abreFechaJanelaDadosAlunoPesquisado = () => {
+    setIsJanelaDadosAlunoPesquisado(!isJanelaDadosAlunoPesquisado);
+  }
+
   const abreFechaJanelaPesquisarAluno = () => {
-    setIsPuscarPesquisa(!isPuscarPesquisa);
+    setIsBuscarPesquisa(!isBuscarPesquisa);
+  }
+
+  const abreFechaJanelaPesquisarAlunoParaEditar = () => {
+    setIsBuscarEditar(!isBuscarEditar);
+  }
+
+  const abreFechaJanelaEditarAluno = () => {
+    setIsJanelaEditarAluno(!isJanelaEditarAluno);
   }
 
   const handlePesquisar = async () => {
     try {
       setAluno(await getAluno(buscaCpf))
       if (aluno != null) {
-        setIsPuscarPesquisa(!isPuscarPesquisa); // Fecha a janela de busca de aluno por cpf
-        setIsJanelaCadastro(!isJanelaCadastro); // Abre a janela de registro de aluno para exibir os dados, alterar para uma nova janela de exibicao apenas
+        setIsBuscarPesquisa(!isBuscarPesquisa); // Fecha a janela de busca de aluno por cpf
+        setIsJanelaDadosAlunoPesquisado(!isJanelaDadosAlunoPesquisado); // Abre a janela de registro de aluno para exibir os dados, alterar para uma nova janela de exibicao apenas
         // Exibe os dados na janela
         setNome(aluno.nome)
-        setDia(new Date(aluno.dataNascimento).getUTCDate().toString())
-        setMes(new Date(aluno.dataNascimento).getUTCMonth().toString())
-        setAno(new Date(aluno.dataNascimento).getUTCFullYear().toString())
+        const dataNascimento = new Date(aluno.dataNascimento)
+        setDia(dataNascimento.getUTCDate().toString().padStart(2, '0'))
+        setMes((dataNascimento.getUTCMonth() + 1).toString().padStart(2, '0'))
+        setAno(dataNascimento.getUTCFullYear().toString())
         setCpf(aluno.cpf)
         setRua(aluno.rua)
         setTelefone(aluno.telefone)
@@ -73,6 +110,60 @@ const Page = () => {
       }
     } catch (error) {
       console.error(error)
+    }
+  };
+
+  const handlePesquisarParaEditar = async () => {
+    try {
+      limpaCampos()
+      setAluno(await getAluno(buscaCpf))
+      if (aluno != null) {
+        setCpfAtual(aluno.cpf)
+        setIsBuscarEditar(!isBuscarEditar); // Fecha a janela de busca de aluno por cpf
+        setIsJanelaEditarAluno(!isJanelaEditarAluno); // Abre a janela de edicao de aluno para exibir os dados
+        // Exibe os dados na janela
+        setNome(aluno.nome)
+        const dataNascimento = new Date(aluno.dataNascimento)
+        setDia(dataNascimento.getUTCDate().toString().padStart(2, '0'))
+        setMes((dataNascimento.getUTCMonth() + 1).toString().padStart(2, '0'))
+        setAno(dataNascimento.getUTCFullYear().toString())
+        setCpf(aluno.cpf)
+        setRua(aluno.rua)
+        setTelefone(aluno.telefone)
+        setBairro(aluno.bairro)
+        setCep(aluno.cep)
+        setCidade(aluno.cidade)
+        setNumeroRua(aluno.numeroRua.toString())
+        setNumeroCasa(aluno.numeroCasa.toString())
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  };
+
+  const handleUpdate = async () => {
+    try {
+      if (aluno != null && usuario != null) {
+        const updateData = {
+          nome,
+          dataNascimento: new Date(aluno.dataNascimento),
+          cpf,
+          rua,
+          telefone,
+          ultimaAlteracao: usuario.login,
+          dataUltimaAlteracao: new Date(),
+          numeroRua,
+          numeroCasa,
+          cep,
+          bairro,
+          cidade,
+        }; // Cria o DTO com os dados a serem enviados
+        await updateAluno(cpfAtual, updateData);
+        setIsJanelaEditarAluno(!isJanelaEditarAluno)
+        limpaCampos()
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar aluno:', error);
     }
   };
 
@@ -99,6 +190,8 @@ const Page = () => {
             usuario: usuario.id
           }
         );
+        limpaCampos()
+        setIsJanelaCadastro(!isJanelaCadastro)
       }
     } catch (error) {
       console.error(error)
@@ -110,7 +203,7 @@ const Page = () => {
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
         <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
           <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
-            <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
+            <img alt="" src="/usuario.png" className="relative inline-block w-100 h-100" />
             <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
               <div className="relative">
                 <h1
@@ -160,19 +253,19 @@ const Page = () => {
               Registrar novo aluno
             </button>
             <button
-              onClick={abreFechaJanelaPesquisarAluno}
+              onClick={abreFechaJanelaPesquisarAlunoParaEditar}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Editar registro
             </button>
             <button
               onClick={abreFechaJanelaPesquisarAluno}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              Excluir aluno
+              Pesquisar aluno
             </button>
             <button
               onClick={abreFechaJanelaPesquisarAluno}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[90px]">
-              Pesquisar aluno
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[55px]">
+              Excluir aluno
             </button>
           </div>
           <div>
@@ -217,12 +310,17 @@ const Page = () => {
               </tbody>
             </table>
 
-
+            {/* Janela de Cadastro */}
             {isJanelaCadastro && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
-                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
-                  <div className=" w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
-                    <div className="w-full  mx-auto mt-8">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      Cadastro de aluno:
+                    </label>
+                    <div className="w-full  mx-auto">
                       <div className="mb-6">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -376,7 +474,8 @@ const Page = () => {
               </div>
             )}
 
-            {isPuscarPesquisa && (
+            {/* Janela para pesquisar o aluno e apenas exibir seus dados */}
+            {isBuscarPesquisa && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
                 <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
                   <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
@@ -410,6 +509,376 @@ const Page = () => {
                 </div>
               </div>
             )}
+
+            {/* Janela para mostrar os dados do aluno pesquisado */}
+            {isJanelaDadosAlunoPesquisado && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      Aluno pesquisado:
+                    </label>
+                    <div className="w-full  mx-auto">
+                      <div className="mb-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Nome:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={nome}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CPF:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={cpf}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Data de nascimento: dd/mm/yyyy
+                            </label>
+                            <input
+                              type="text"
+                              id="dia"
+                              value={dia}
+                              disabled
+                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                            />
+                            <input
+                              type="text"
+                              id="mes"
+                              value={mes}
+                              disabled
+                              className="w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                            <input
+                              type="text"
+                              id="ano"
+                              value={ano}
+                              disabled
+                              className="w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Rua:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={rua}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Telefone:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={telefone}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Bairro:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={bairro}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CEP:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={cep}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Cidade:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={cidade}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Rua:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={numeroRua}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Casa:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={numeroCasa}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+                        <button
+                          onClick={abreFechaJanelaDadosAlunoPesquisado}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Fechar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Janela para buscar aluno a ser editado */}
+            {isBuscarEditar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
+                  <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <label
+                        htmlFor="first_name"
+                        className=" ml-4 text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">
+                        Digite o CPF do aluno que quer editar:
+                      </label>
+                      <input
+                        type="text"
+                        id="first_name"
+                        value={buscaCpf}
+                        onChange={(e) => setBuscaCpf(e.target.value)}
+                        className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
+                      />
+                      <div className="flex mt-10 gap-4">
+                        <button
+                          onClick={handlePesquisarParaEditar}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Pesquisar
+                        </button>
+                        <button
+                          onClick={abreFechaJanelaPesquisarAlunoParaEditar}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700 ">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isJanelaEditarAluno && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      Edição de aluno:
+                    </label>
+                    <div className="w-full  mx-auto">
+                      <div className="mb-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Nome:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={nome}
+                              onChange={(e) => setNome(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CPF:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={cpf}
+                              onChange={(e) => setCpf(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Data de nascimento: dd/mm/yyyy</label>
+                            <input
+                              type="text"
+                              id="dia"
+                              value={dia}
+                              onChange={(e) => setDia(e.target.value)}
+                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                            />
+                            <input
+                              type="text"
+                              id="mes"
+                              value={mes}
+                              onChange={(e) => setMes(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                            <input
+                              type="text"
+                              id="ano"
+                              value={ano}
+                              onChange={(e) => setAno(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Rua:</label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={rua}
+                              onChange={(e) => setRua(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Telefone:</label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={telefone}
+                              onChange={(e) => setTelefone(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3" />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Bairro:</label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={bairro}
+                              onChange={(e) => setBairro(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CEP:</label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={cep}
+                              onChange={(e) => setCep(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Cidade:</label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={cidade}
+                              onChange={(e) => setCidade(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Rua:</label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={numeroRua}
+                              onChange={(e) => setNumeroRua(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Casa:</label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={numeroCasa}
+                              onChange={(e) => setNumeroCasa(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+                        <button
+                          onClick={abreFechaJanelaEditarAluno}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleUpdate}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
