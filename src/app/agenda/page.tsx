@@ -1,8 +1,10 @@
 "use client"
 import { useState } from "react";
 import { callCreate, ICreateAluno } from "./api";
+import { useAuth } from "@/context/auth";
 
 const Page = () => {
+  const { usuario, isAuthenticated, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isbuscar, setisbuscar] = useState(false);
 
@@ -58,6 +60,7 @@ const Page = () => {
       <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
         <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
           <div className="relative">
+          <h1>Bem-vindo, {usuario?.nome || 'Usuário'}!</h1>
           <a href="/agenda">
             <button 
               className=" font-bold font-spartan text-[40px] mb-4 block   w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">

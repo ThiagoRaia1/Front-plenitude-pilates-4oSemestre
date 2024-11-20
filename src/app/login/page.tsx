@@ -1,27 +1,33 @@
 "use client"
 
 import { useAuth } from "@/context/auth"
-import Link from "next/link"
 import { useState } from "react"
-import { login as loginApi } from "./api"
+import { getDadosUsuarioLogado, IUsuario, login as loginApi } from "./api"
+import { useRouter } from 'next/navigation'
 
 const Page = () => {
+  const router = useRouter()
   const { isAuthenticated, login, logout } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   const handleLogin = async () => {
     try {
-      const { token } = await loginApi({ email, password })
+      const { token } = await loginApi({ email, password });
       if (!token) {
-        throw new Error('Token não encontrado')
+        throw new Error("Token não encontrado");
       }
-      localStorage.setItem('token', token) // Salva o token no localStorage
-      login()
+  
+      localStorage.setItem("token", token);
+  
+      const usuario: IUsuario = await getDadosUsuarioLogado({ email, password });
+  
+      login(usuario, token); // Atualiza o contexto com os dados do usuário e o token
+      router.push("/agenda");
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
@@ -43,7 +49,7 @@ const Page = () => {
             className="mt-4 text-black px-4 py-2 border border-gray-300 rounded"
           />
           <input
-            type="password"
+            type="text"
             placeholder="Senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

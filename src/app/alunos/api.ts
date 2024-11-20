@@ -7,8 +7,8 @@ export interface ICreateAluno {
   status: string
   ultimaAlteracao: string
   dataUltimaAlteracao: Date
-  numeroRua: number;
-  numeroCasa: number;
+  numeroRua: string; // alterar para number
+  numeroCasa: string; // alterar para number
   cep: string;
   bairro: string;
   cidade: string;

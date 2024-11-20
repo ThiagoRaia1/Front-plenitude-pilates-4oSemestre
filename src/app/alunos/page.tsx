@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react";
 import { callCreate, getAluno, getTodos, IAluno, ICreateAluno } from "./api";
+import { useAuth } from "@/context/auth";
 
 function formataDataBr(data: Date) {
   const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
@@ -12,8 +13,10 @@ function formataDataBr(data: Date) {
 }
 
 const Page = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isbuscar, setisbuscar] = useState(false);
+  const { usuario, isAuthenticated, logout } = useAuth();
+
+  const [isJanelaCadastro, setIsJanelaCadastro] = useState(false);
+  const [isPuscarPesquisa, setIsPuscarPesquisa] = useState(false);
 
   const [nome, setNome] = useState('')
   const [dia, setDia] = useState('')
@@ -32,7 +35,7 @@ const Page = () => {
   const [buscaCpf, setBuscaCpf] = useState('')
 
   const [todos, setTodos] = useState<IAluno[]>([]) // Inicializa o estado com um array vazio
-  
+
   useEffect(() => {
     const fetchTodos = async () => {
       const data = await getTodos()
@@ -42,23 +45,23 @@ const Page = () => {
   })
 
   const abreFechaJanelaCadastro = () => {
-    setIsModalOpen(!isModalOpen);
+    setIsJanelaCadastro(!isJanelaCadastro);
   }
   const abreFechaJanelaPesquisarAluno = () => {
-    setisbuscar(!isbuscar);
+    setIsPuscarPesquisa(!isPuscarPesquisa);
   }
 
   const handlePesquisar = async () => {
     try {
       setAluno(await getAluno(buscaCpf))
       if (aluno != null) {
-        setisbuscar(!isbuscar); // Fecha a janela de busca de aluno por cpf
-        setIsModalOpen(!isModalOpen); // Abre a janela de registro de aluno para exibir os dados, alterar para uma nova janela de exibicao apenas
+        setIsPuscarPesquisa(!isPuscarPesquisa); // Fecha a janela de busca de aluno por cpf
+        setIsJanelaCadastro(!isJanelaCadastro); // Abre a janela de registro de aluno para exibir os dados, alterar para uma nova janela de exibicao apenas
         // Exibe os dados na janela
         setNome(aluno.nome)
-        setDia(new Date (aluno.dataNascimento).getUTCDate().toString())
-        setMes(new Date (aluno.dataNascimento).getUTCMonth().toString())
-        setAno(new Date (aluno.dataNascimento).getUTCFullYear().toString())
+        setDia(new Date(aluno.dataNascimento).getUTCDate().toString())
+        setMes(new Date(aluno.dataNascimento).getUTCMonth().toString())
+        setAno(new Date(aluno.dataNascimento).getUTCFullYear().toString())
         setCpf(aluno.cpf)
         setRua(aluno.rua)
         setTelefone(aluno.telefone)
@@ -77,24 +80,25 @@ const Page = () => {
     try {
       // Subtrai 1 do mês por causa do índice. Ex: mes[0] = janeiro, mes[1] = fevereiro [...]
       const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia))
-      await callCreate(
-        {
-          nome,
-          dataNascimento,
-          cpf,
-          telefone,
-          status: "Ativo",
-          ultimaAlteracao: "a", // usuario logado
-          dataUltimaAlteracao: new Date(),
-          rua, 
-          numeroRua: 0,
-          numeroCasa: 0, 
-          cep,
-          bairro,
-          cidade
-        }
-      );
-
+      if (usuario != null) {
+        await callCreate(
+          {
+            nome,
+            dataNascimento,
+            cpf,
+            telefone,
+            status: "Ativo",
+            ultimaAlteracao: usuario.login, // usuario logado
+            dataUltimaAlteracao: new Date(),
+            rua,
+            numeroRua,
+            numeroCasa,
+            cep,
+            bairro,
+            cidade
+          }
+        );
+      }
     } catch (error) {
       console.error(error)
     }
@@ -108,6 +112,7 @@ const Page = () => {
             <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
             <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
               <div className="relative">
+                <h1 className="font-bold font-spartan text-[30px]">Usuario: {usuario?.nome}</h1>
                 <a href="/agenda">
                   <button
                     className=" font-bold font-spartan text-[40px] mb-4 block   w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
@@ -168,7 +173,7 @@ const Page = () => {
           </div>
           <div>
             <table
-            className="bg-white w-full max-w-xl mt-16 mx-auto
+              className="bg-white w-full max-w-xl mt-16 mx-auto
                       [&_td]:border-collapse [&_td]:border [&_td]:border-blue-500
                       [&_th]:border-collapse [&_th]:border [&_th]:border-black [&_th]:py-2 [&_th]:px-4 [&_th]:text-centered">
               <thead>
@@ -180,8 +185,8 @@ const Page = () => {
                   <th>Status</th>
                   <th>Última Alteração</th>
                   <th>Data da Última Alteração</th>
-                  <th>Número Rua</th>
-                  <th>Número Casa</th>
+                  {/* <th>Número Rua</th>
+                  <th>Número Casa</th> */}
                   <th>CEP</th>
                   <th>Bairro</th>
                   <th>Cidade</th>
@@ -198,8 +203,8 @@ const Page = () => {
                     <td>{todo.status}</td>
                     <td>{todo.ultimaAlteracao}</td>
                     <td>{formataDataBr(new Date(todo.dataUltimaAlteracao))}</td>
-                    <td>{todo.numeroRua}</td>
-                    <td>{todo.numeroCasa}</td>
+                    {/* <td>{todo.numeroRua}</td>
+                    <td>{todo.numeroCasa}</td> */}
                     <td>{todo.cep}</td>
                     <td>{todo.bairro}</td>
                     <td>{todo.cidade}</td>
@@ -209,7 +214,7 @@ const Page = () => {
             </table>
 
 
-            {isModalOpen && (
+            {isJanelaCadastro && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
                 <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
                   <div className=" w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
@@ -217,7 +222,9 @@ const Page = () => {
                       <div className="mb-6">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Nome:</label>
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Nome:
+                            </label>
                             <input
                               type="text"
                               id="first_name"
@@ -227,7 +234,9 @@ const Page = () => {
                             />
                           </div>
                           <div>
-                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">CPF:</label>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CPF:
+                            </label>
                             <input
                               type="text"
                               id="last_name"
@@ -363,31 +372,31 @@ const Page = () => {
               </div>
             )}
 
-            {isbuscar && (
+            {isPuscarPesquisa && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
                 <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
                   <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
                     <div className="flex flex-col items-center justify-center h-full">
-                      <label 
-                        htmlFor="first_name" 
+                      <label
+                        htmlFor="first_name"
                         className=" ml-4 text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">
                         Digite o CPF do aluno que quer encontrar:
-                        </label>
-                      <input 
-                        type="text" 
+                      </label>
+                      <input
+                        type="text"
                         id="first_name"
                         value={buscaCpf}
                         onChange={(e) => setBuscaCpf(e.target.value)}
-                        className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3" 
+                        className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
                       />
                       <div className="flex mt-10 gap-4">
-                        <button 
-                          onClick={handlePesquisar} 
+                        <button
+                          onClick={handlePesquisar}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700">
                           Pesquisar
                         </button>
-                        <button 
-                          onClick={abreFechaJanelaPesquisarAluno} 
+                        <button
+                          onClick={abreFechaJanelaPesquisarAluno}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700 ">
                           Cancelar
                         </button>
