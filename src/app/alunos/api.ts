@@ -12,6 +12,7 @@ export interface ICreateAluno {
   cep: string;
   bairro: string;
   cidade: string;
+  usuario: number
 }
 
 export interface IAluno {

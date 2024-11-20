@@ -95,7 +95,8 @@ const Page = () => {
             numeroCasa,
             cep,
             bairro,
-            cidade
+            cidade,
+            usuario: usuario.id
           }
         );
       }
@@ -112,7 +113,10 @@ const Page = () => {
             <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
             <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
               <div className="relative">
-                <h1 className="font-bold font-spartan text-[30px]">Usuario: {usuario?.nome}</h1>
+                <h1
+                  className="font-bold font-spartan text-[30px] text-white">
+                  Usuario: {usuario?.nome}
+                </h1>
                 <a href="/agenda">
                   <button
                     className=" font-bold font-spartan text-[40px] mb-4 block   w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
