@@ -241,6 +241,15 @@ const Page = () => {
                   </button>
                 </a>
               </div>
+              <div className="relative">
+                <a href="/login">
+                  <button
+                    onClick={logout}
+                    className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    LOGOUT
+                  </button>
+                </a>
+              </div>
             </div>
           </div>
         </div>

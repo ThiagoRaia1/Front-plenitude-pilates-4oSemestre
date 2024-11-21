@@ -37,12 +37,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Carregar os dados do localStorage quando o AuthProvider é montado
   useEffect(() => {
-    const storedusuario = localStorage.getItem("usuario");
+    const storedUsuario = localStorage.getItem("usuario");
     const storedToken = localStorage.getItem("token");
 
-    if (storedusuario && storedToken) {
+    if (storedUsuario && storedToken) {
       setIsAuthenticated(true);
-      setUsuario(JSON.parse(storedusuario)); // Parseia e define o usuário no estado
+      setUsuario(JSON.parse(storedUsuario)); // Parseia e define o usuário no estado
     }
   }, []);
 

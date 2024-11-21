@@ -17,13 +17,13 @@ const Page = () => {
       if (!token) {
         throw new Error("Token não encontrado");
       }
-  
+
       localStorage.setItem("token", token);
-  
+
       const usuario: IUsuario = await getDadosUsuarioLogado({ email, password });
-  
+
       login(usuario, token); // Atualiza o contexto com os dados do usuário e o token
-      router.push("/agenda");
+      router.push('/agenda');
     } catch (error) {
       console.error(error);
     }
@@ -34,7 +34,14 @@ const Page = () => {
       {isAuthenticated ? (
         <>
           <h1 className="text-4xl font-bold">Você está logado!</h1>
-          <button onClick={logout} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+          <button
+            onClick={() => router.push('/agenda')}
+            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+            Ir para o menu
+          </button>
+          <button
+            onClick={logout}
+            className="mt-4 bg-blue-500 text-white px-11 py-2 rounded">
             Logout
           </button>
         </>
@@ -56,7 +63,7 @@ const Page = () => {
             className="mt-4 text-black px-4 py-2 border border-gray-300 rounded"
           />
           <button onClick={handleLogin} className="mt-4 bg-blue-500 text-white px-24 py-2 rounded hover:underline">
-                Login
+            Login
           </button>
         </>
       )}

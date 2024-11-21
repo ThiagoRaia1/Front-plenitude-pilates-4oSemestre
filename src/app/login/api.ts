@@ -41,5 +41,5 @@ export const getDadosUsuarioLogado = async (data: ILoginRequest): Promise<IUsuar
   
   const text = await response.text();
   const json = await JSON.parse(text);
-  return json; // Retorna o token desestruturado
+  return json; // Retorna os dados do usuario
 };

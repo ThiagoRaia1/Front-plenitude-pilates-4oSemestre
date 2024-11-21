@@ -72,11 +72,14 @@ export const getTodos = async (): Promise<IInstrutor[]> => {
 
 export const getInstrutor = async (cpf: string): Promise<any> => {
   // Faz a requisição ao servidor
+  // const token = localStorage.getItem('token')
   try {
     const response = await fetch(`http://localhost:3001/instrutor/${cpf}`, {
+      // https://plenitude-pilates-4osemestre.onrender.com/usuario
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        // Authorization: `Bearer ${token}` // Adiciona o token no header da requisição
       },
     });
 
@@ -87,7 +90,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
     // Retorna os dados do instrutor
     const data = await response.text();
     const json = await JSON.parse(data)
-    console.error('Dados do instrutor:', ); // Adicione este console.log
+    console.error('Dados do instrutor:',)
     return await json;
   } catch (error) {
     console.error('Erro ao buscar instrutor:', error);
