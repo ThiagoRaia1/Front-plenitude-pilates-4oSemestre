@@ -22,3 +22,7 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+input:disabled {
+  @apply text-black border-gray-700
+}

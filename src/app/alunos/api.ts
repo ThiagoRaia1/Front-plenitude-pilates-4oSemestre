@@ -7,11 +7,27 @@ export interface ICreateAluno {
   status: string
   ultimaAlteracao: string
   dataUltimaAlteracao: Date
-  numeroRua: number;
-  numeroCasa: number;
+  numeroRua: string; // alterar para number
+  numeroCasa: string; // alterar para number
   cep: string;
   bairro: string;
   cidade: string;
+  usuario: number
+}
+
+export interface IUpdateAluno {
+  nome?: string
+  dataNascimento?: Date
+  cpf?: string
+  rua?: string
+  telefone?: string
+  ultimaAlteracao: string
+  dataUltimaAlteracao: Date
+  numeroRua?: string; // alterar para number
+  numeroCasa?: string; // alterar para number
+  cep?: string;
+  bairro?: string;
+  cidade?: string;
 }
 
 export interface IAluno {
@@ -73,5 +89,27 @@ export const getAluno = async (cpf: string): Promise<any> => {
   } catch (error) {
     console.error('Erro ao buscar aluno:', error);
     throw error;
+  }
+};
+
+export const updateAluno = async (cpf: string, data: IUpdateAluno) => {
+  try {
+    const response = await fetch(`http://localhost:3001/alunos/${cpf}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result; // Resultado da API
+  } catch (error) {
+    console.error('Erro ao atualizar aluno:', error);
+    throw error; // Repassa o erro para ser tratado onde a função for chamada
   }
 };
