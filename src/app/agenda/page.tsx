@@ -16,6 +16,8 @@ const Page = () => {
   const [dia, setDia] = useState('')
   const [mes, setMes] = useState('')
   const [ano, setAno] = useState('')
+  const [tipoDeAula, setTipoDeAula] = useState('')
+  const opcoes = ['Aula Normal', 'Aula Experimental'];
   const [instrutorCpf, setInstrutorCpf] = useState('')
   const [dadosInstrutor, setDadosInstrutor] = useState<IInstrutor | null>(null)
   const [aluno, setAluno] = useState<IAluno | null>(null)
@@ -70,29 +72,36 @@ const Page = () => {
       console.error(error)
     }
   }
+  const [erro, setErro] = useState('');
 
   const registraAlunoAula = async () => {
-    const horaComeco = new Date(
-      parseInt(ano),
-      parseInt(mes) - 1,
-      parseInt(dia),
-      parseInt(hora),
-      parseInt(minuto)
-    );
+    if (!tipoDeAula) {
+      setErro('Você deve selecionar o tipo de aula.');
+    } else {
+      setErro(''); // Limpa o erro se a validação passar
+      const horaComeco = new Date(
+        parseInt(ano),
+        parseInt(mes) - 1,
+        parseInt(dia),
+        parseInt(hora),
+        parseInt(minuto)
+      );
 
-    try {
-      if (usuario != null) {
-        setAula(await getAula(horaComeco))
-        if (aula != null && aluno != null) {
-          await callCreateAlunoAula({
-            aluno,
-            aula
-          })
-          setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
+      try {
+        if (usuario != null) {
+          setAula(await getAula(horaComeco))
+          if (aula != null && aluno != null) {
+            await callCreateAlunoAula({
+              aluno,
+              aula,
+              tipoDeAula
+            })
+            setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
+          }
         }
+      } catch (error) {
+        console.error(error)
       }
-    } catch (error) {
-      console.error(error)
     }
   }
 
@@ -380,6 +389,26 @@ const Page = () => {
                               className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
                             />
                           </div>
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Tipo de aula:
+                            </label>
+                            <select
+                              id="tipoDeAula"
+                              value={tipoDeAula}
+                              onChange={(e) => setTipoDeAula(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3">
+                              <option value="">Selecione um tipo</option>
+                              {opcoes.map((opcao, index) => (
+                                <option key={index} value={opcao}>
+                                  {opcao}
+                                </option>
+                              ))}
+                            </select>
+                            
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
                           <div>
@@ -399,6 +428,11 @@ const Page = () => {
                               className="w-80 rounded-lg text-black border py-2 px-3"
                             />
                           </div>
+                          {erro && (
+                              <p className="mt-2 text-red-600 font-bold">
+                                {erro}
+                              </p>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
                           <div>

@@ -24,6 +24,7 @@ export interface IAula {
 export interface ICreateAlunoAula {
   aluno: IAluno
   aula: IAula
+  tipoDeAula: string
 }
 
 export const callCreateAula = async (data: ICreateAula): Promise<ICreateAula> => {
