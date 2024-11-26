@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
-import { callCreate, getInstrutor, getTodos, IInstrutor, ICreateInstrutor, updateInstrutor } from "./api";
+import { callCreateInstrutor, callCreateUsuario, getInstrutor, getTodos, IInstrutor, ICreateInstrutor, updateInstrutor } from "./api";
 import { useAuth } from "@/context/auth";
 
 function formataDataBr(data: Date) {
@@ -16,6 +16,7 @@ const Page = () => {
   const { usuario, isAuthenticated, logout } = useAuth();
 
   const [isJanelaCadastro, setIsJanelaCadastro] = useState(false);
+  const [isJanelaCadastroUsuario, setIsJanelaCadastroUsuario] = useState(false);
 
   const [isJanelaDadosInstrutorPesquisado, setIsJanelaDadosInstrutorPesquisado] = useState(false);
   const [isBuscarPesquisa, setIsBuscarPesquisa] = useState(false);
@@ -35,6 +36,10 @@ const Page = () => {
   const [cidade, setCidade] = useState('')
   const [numeroRua, setNumeroRua] = useState('')
   const [numeroCasa, setNumeroCasa] = useState('')
+
+  const [login, setLogin] = useState('')
+  const [senha, setSenha] = useState('')
+  const [nivelDeAcesso, setNivelDeAcesso] = useState('')
 
   const [instrutor, setInstrutor] = useState<ICreateInstrutor | null>(null); // Inicialmente vazio
   const [buscaCpf, setBuscaCpf] = useState('')
@@ -69,6 +74,11 @@ const Page = () => {
   const abreFechaJanelaCadastro = () => {
     limpaCampos()
     setIsJanelaCadastro(!isJanelaCadastro);
+  }
+
+  const abreFechaJanelaCadastroUsuario = () => {
+    limpaCampos()
+    setIsJanelaCadastroUsuario(!isJanelaCadastroUsuario);
   }
 
   const abreFechaJanelaDadosinstrutorPesquisado = () => {
@@ -168,12 +178,12 @@ const Page = () => {
     }
   };
 
-  const registraInstutor = async () => {
+  const registraInstrutor = async () => {
     try {
       // Subtrai 1 do mês por causa do índice. Ex: mes[0] = janeiro, mes[1] = fevereiro [...]
       const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia))
       if (usuario != null) {
-        await callCreate(
+        await callCreateInstrutor(
           {
             nome,
             dataNascimento,
@@ -193,6 +203,29 @@ const Page = () => {
         );
         limpaCampos()
         setIsJanelaCadastro(!isJanelaCadastro)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const registraUsuario = async () => {
+    try {
+      if (usuario != null) {
+        await callCreateUsuario(
+          {
+            login,
+            senha,
+            nome,
+            status: "Ativo",
+            // ultimaAlteracao: usuario.login, // usuario logado
+            // dataUltimaAlteracao: new Date(),
+            // usuario: usuario.id
+            nivelDeAcesso
+          }
+        );
+        limpaCampos()
+        setIsJanelaCadastroUsuario(!isJanelaCadastroUsuario)
       }
     } catch (error) {
       console.error(error)
@@ -261,6 +294,11 @@ const Page = () => {
               onClick={abreFechaJanelaCadastro}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Registrar novo funcionario
+            </button>
+            <button
+              onClick={abreFechaJanelaCadastroUsuario}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              Registrar novo usuario
             </button>
             <button
               onClick={abreFechaJanelaPesquisarinstrutorParaEditar}
@@ -473,7 +511,7 @@ const Page = () => {
                           Cancelar
                         </button>
                         <button
-                          onClick={registraInstutor}
+                          onClick={registraInstrutor}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
                           Salvar
                         </button>
@@ -889,6 +927,85 @@ const Page = () => {
               </div>
             )}
 
+
+            {isJanelaCadastroUsuario && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      Cadastro de usuário:
+                    </label>
+                    <div className="w-full mx-auto mt-20">
+                      <div className="mb-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Login:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={login}
+                              onChange={(e) => setLogin(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Senha:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={senha}
+                              onChange={(e) => setSenha(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Nome:</label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={nome}
+                              onChange={(e) => setNome(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3" />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Nivel de acesso:</label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={nivelDeAcesso}
+                              onChange={(e) => setNivelDeAcesso(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-4">
+                        <button
+                          onClick={abreFechaJanelaCadastroUsuario}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={registraUsuario}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
