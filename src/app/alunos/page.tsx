@@ -226,12 +226,13 @@ const Page = () => {
   
     try {
       // Validação dos dados com o Zod
-      const validatedData = formSchema.parse({
+      formSchema.parse({
         name: nome,
         datanascimento: `${dia}/${mes}/${ano}`,
         cpf: cpf,
         telefone: telefone,
         rua: rua,
+        numeroRua: numeroRua,
         numeroCasa: numeroCasa,
         cep: cep,
         bairro: bairro,
@@ -283,7 +284,7 @@ const Page = () => {
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
         <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
-          <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
+          <div className="max-w-lg text-center  ">
             <img alt="" src="/usuario.png" className="relative inline-block w-100 h-100" />
             <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
               <div className="relative">
@@ -403,17 +404,21 @@ const Page = () => {
             {/* Janela de Cadastro */}
             {isJanelaCadastro && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+              
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[630px] border-4 border-[#ececec] p-6">
+                <div className="absolute top-[45px] left-1/2 transform -translate-x-1/2 bg-white rounded-lg border-4 border-[#9f968a] px-4 py-1 z-10">
+      <label
+        htmlFor="first_name"
+        className="text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]">
+        Cadastro de aluno:
+      </label>
+    </div>
                   <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
-                    <label
-                      htmlFor="first_name"
-                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
-                      Cadastro de aluno:
-                    </label>
+
                     <div className="w-full  mx-auto">
                       <div className="mb-6">
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Nome:
                             </label>
@@ -422,11 +427,11 @@ const Page = () => {
                               id="first_name"
                               value={nome}
                               onChange={(e) => setNome(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
                              {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               CPF:
                             </label>
@@ -435,13 +440,13 @@ const Page = () => {
                               id="last_name"
                               value={cpf}
                               onChange={(e) => setCpf(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
                             {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Data de nascimento: dd/mm/yyyy</label>
                             <input
@@ -449,7 +454,7 @@ const Page = () => {
                               id="dia"
                               value={dia}
                               onChange={(e) => setDia(e.target.value)}
-                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                              className="w-[100px] rounded-lg text-black border py-1 px-[8px] mr-2"
                             />
                             
                             <input
@@ -457,17 +462,17 @@ const Page = () => {
                               id="mes"
                               value={mes}
                               onChange={(e) => setMes(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
                             />
                             <input
                               type="text"
                               id="ano"
                               value={ano}
                               onChange={(e) => setAno(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
                             />
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Rua:</label>
                             <input
@@ -475,13 +480,13 @@ const Page = () => {
                               id="last_name"
                               value={rua}
                               onChange={(e) => setRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
                              {errors.rua && <p style={{ color: "red" }}>{errors.rua}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Telefone:</label>
                             <input
@@ -489,10 +494,10 @@ const Page = () => {
                               id="first_name"
                               value={telefone}
                               onChange={(e) => setTelefone(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3" />
+                              className="w-80 rounded-lg text-black border py-1 px-3" />
                                {errors.telefone && <p style={{ color: "red" }}>{errors.telefone}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Bairro:</label>
                             <input
@@ -500,13 +505,13 @@ const Page = () => {
                               id="last_name"
                               value={bairro}
                               onChange={(e) => setBairro(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
                              {errors.bairro && <p style={{ color: "red" }}>{errors.bairro}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               CEP:</label>
                             <input
@@ -514,11 +519,11 @@ const Page = () => {
                               id="first_name"
                               value={cep}
                               onChange={(e) => setCep(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
                              {errors.cep && <p style={{ color: "red" }}>{errors.cep}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Cidade:</label>
                             <input
@@ -526,11 +531,11 @@ const Page = () => {
                               id="last_name"
                               value={cidade}
                               onChange={(e) => setCidade(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
                              {errors.cidade && <p style={{ color: "red" }}>{errors.cidade}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Numero da Rua:</label>
                             <input
@@ -538,11 +543,12 @@ const Page = () => {
                               id="last_name"
                               value={numeroRua}
                               onChange={(e) => setNumeroRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
-                             {errors.numerorua && <p style={{ color: "red" }}>{errors.numerorua}</p>}
+                             {errors.numeroRua && <p style={{ color: "red" }}>{errors.numeroRua}</p>}
+                           
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Numero da Casa:</label>
                             <input
@@ -550,21 +556,21 @@ const Page = () => {
                               id="last_name"
                               value={numeroCasa}
                               onChange={(e) => setNumeroCasa(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
-                             {errors.numerocasa && <p style={{ color: "red" }}>{errors.numerocasa}</p>}
+                             {errors.numeroCasa && <p style={{ color: "red" }}>{errors.numeroCasa}</p>}
                           </div>
                         </div>
                       </div>
-                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+                      <div className="mt-15 flex justify-end gap-4 ml-[800px]">
                         <button
                           onClick={abreFechaJanelaCadastro}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-4 py-1 rounded-lg hover:bg-teal-700">
                           Cancelar
                         </button>
                         <button
                           onClick={handleSubmit}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-8 py-1 rounded-lg hover:bg-teal-700">
                           Salvar
                         </button>
                       </div>
