@@ -6,23 +6,41 @@ import { z } from 'zod';
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome não pode ser maior que 50 caracteres"),
+
   datanascimento: z.string().email("data de nascimento inválido"),
-  cpf: z.string().min(1,{message: "CPF é obrigatório"}),
-  telefone: z.string().length(11, { message: "Telefone deve ter 11 dígitos" }).regex(/^\d+$/, {
-    message: "Telefone deve conter apenas números",
-  }),
+
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+
+  telefone: z.string()
+    // Verifica o tamanho
+    .length(14, { message: "Telefone deve ter 14 dígitos" })
+    // Verifica se esta no formato (99)99999-9999
+    .regex(/^\(\d{2}\)\d{5}-\d{4}$/, { message: "Telefone deve conter o formato indicado", }),
+
   rua: z.string().min(1, { message: "Rua é obrigatória" }),
-  numeroRua: z.string().min(1, { message: "Número da rua é obrigatório" }),
-  numeroCasa: z.string().min(1, { message: "Número da casa é obrigatório" }),
-  cep: z.string().length(8, { message: "CEP deve ter 8 dígitos" }).regex(/^\d+$/, {
-    message: "CEP deve conter apenas números",
-  }),
+
+  cep: z.string()
+    // Verifica se esta no formato 99999-999
+    .regex(/^\d{5}-\d{3}$/, { message: "CEP deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(8, { message: "CEP deve ter 8 dígitos" }),
+
   bairro: z.string().min(1, { message: "Bairro é obrigatório" }),
+
   cidade: z.string().min(1, { message: "Cidade é obrigatória" }),
+
+  numeroRua: z.string()
+    .regex(/^\d+$/, { message: "O número da rua deve conter apenas números" })
+    .min(1, { message: "Número da rua é obrigatório" }),
+
+  numeroCasa: z.string()
+    .regex(/^\d+$/, { message: "O número da casa deve conter apenas números" })
+    .min(1, { message: "Número da casa é obrigatório" }),
 });
-
-const cpfRegex = /^[0-9]{11}$/;
-
 
 function formataDataBr(data: Date) {
   const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
@@ -223,7 +241,7 @@ const Page = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-  
+
     try {
       // Validação dos dados com o Zod
       const validatedData = formSchema.parse({
@@ -237,10 +255,10 @@ const Page = () => {
         bairro: bairro,
         cidade: cidade,
 
-        
+
         // Ajuste conforme necessário
       });
-  
+
       // Se passar pela validação, a execução segue
       const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
       if (usuario != null) {
@@ -260,13 +278,13 @@ const Page = () => {
           cidade,
           usuario: usuario.id,
         });
-  
+
         // Limpa os campos e fecha o modal
         limpaCampos();
         setErrors({});
         setIsJanelaCadastro(!isJanelaCadastro);
       }
-  
+
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
@@ -278,7 +296,7 @@ const Page = () => {
       }
     }
   };
-  
+
   return (
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
@@ -402,19 +420,20 @@ const Page = () => {
 
             {/* Janela de Cadastro */}
             {isJanelaCadastro && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+              <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+                <div className="bg-[#ececec] rounded-lg w-[90%] max-w-[1000px] max-h-[80vh] border-4 border-[#ececec] p-6 overflow-y-auto">
                   <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
                     <label
                       htmlFor="first_name"
                       className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
                       Cadastro de aluno:
                     </label>
-                    <div className="w-full  mx-auto">
+                    <div className="w-full mx-auto">
                       <div className="mb-6">
                         <div className="grid grid-cols-2 gap-4">
+                          {/* Nome */}
                           <div>
-                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                            <label htmlFor="first_name" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Nome:
                             </label>
                             <input
@@ -422,149 +441,179 @@ const Page = () => {
                               id="first_name"
                               value={nome}
                               onChange={(e) => setNome(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-full rounded-lg text-black border py-2 px-3"
                             />
-                             {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
+                            {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
                           </div>
+
+                          {/* CPF */}
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              CPF:
+                              CPF - 999.999.999-99:
                             </label>
                             <input
                               type="text"
                               id="last_name"
                               value={cpf}
                               onChange={(e) => setCpf(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-full rounded-lg text-black border py-2 px-3"
                             />
-                            {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
+                            {errors.cpf && <p className="text-sm text-red-500 mt-1">{errors.cpf}</p>}
                           </div>
                         </div>
+
                         <div className="grid grid-cols-2 gap-4 mt-4">
+                          {/* Data de nascimento */}
                           <div>
-                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Data de nascimento: dd/mm/yyyy</label>
-                            <input
-                              type="text"
-                              id="dia"
-                              value={dia}
-                              onChange={(e) => setDia(e.target.value)}
-                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
-                            />
-                            
-                            <input
-                              type="text"
-                              id="mes"
-                              value={mes}
-                              onChange={(e) => setMes(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
-                            />
-                            <input
-                              type="text"
-                              id="ano"
-                              value={ano}
-                              onChange={(e) => setAno(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
-                            />
+                            <label htmlFor="data_nascimento" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Data de nascimento: dd/mm/aaaa
+                            </label>
+                            <div className="flex space-x-2">
+                              <input
+                                type="text"
+                                id="dia"
+                                value={dia}
+                                onChange={(e) => setDia(e.target.value)}
+                                className="w-full rounded-lg text-black border py-2 px-3"
+                              />
+                              <input
+                                type="text"
+                                id="mes"
+                                value={mes}
+                                onChange={(e) => setMes(e.target.value)}
+                                className="w-full rounded-lg text-black border py-2 px-3"
+                              />
+                              <input
+                                type="text"
+                                id="ano"
+                                value={ano}
+                                onChange={(e) => setAno(e.target.value)}
+                                className="w-full rounded-lg text-black border py-2 px-3"
+                              />
+                            </div>
                           </div>
+
+                          {/* Rua */}
                           <div>
-                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Rua:</label>
+                            <label htmlFor="rua" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Rua:
+                            </label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="rua"
                               value={rua}
                               onChange={(e) => setRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-full rounded-lg text-black border py-2 px-3"
                             />
-                             {errors.rua && <p style={{ color: "red" }}>{errors.rua}</p>}
+                            {errors.rua && <p className="text-sm text-red-500 mt-1">{errors.rua}</p>}
                           </div>
                         </div>
+
                         <div className="grid grid-cols-2 gap-4 mt-4">
+                          {/* Telefone */}
                           <div>
-                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Telefone:</label>
+                            <label htmlFor="telefone" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Telefone - (99)99999-9999:
+                            </label>
                             <input
                               type="text"
-                              id="first_name"
+                              id="telefone"
                               value={telefone}
                               onChange={(e) => setTelefone(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3" />
-                               {errors.telefone && <p style={{ color: "red" }}>{errors.telefone}</p>}
+                              className="w-full rounded-lg text-black border py-2 px-3"
+                            />
+                            {errors.telefone && <p className="text-sm text-red-500 mt-1">{errors.telefone}</p>}
                           </div>
+
+                          {/* Bairro */}
                           <div>
-                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Bairro:</label>
+                            <label htmlFor="bairro" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Bairro:
+                            </label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="bairro"
                               value={bairro}
                               onChange={(e) => setBairro(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-full rounded-lg text-black border py-2 px-3"
                             />
-                             {errors.bairro && <p style={{ color: "red" }}>{errors.bairro}</p>}
+                            {errors.bairro && <p className="text-sm text-red-500 mt-1">{errors.bairro}</p>}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          {/* CEP */}
+                          <div>
+                            <label htmlFor="cep" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CEP:
+                            </label>
+                            <input
+                              type="text"
+                              id="cep"
+                              value={cep}
+                              onChange={(e) => setCep(e.target.value)}
+                              className="w-full rounded-lg text-black border py-2 px-3"
+                            />
+                            {errors.cep && <p className="text-sm text-red-500 mt-1">{errors.cep}</p>}
+                          </div>
+
+                          {/* Cidade */}
+                          <div>
+                            <label htmlFor="cidade" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Cidade:
+                            </label>
+                            <input
+                              type="text"
+                              id="cidade"
+                              value={cidade}
+                              onChange={(e) => setCidade(e.target.value)}
+                              className="w-full rounded-lg text-black border py-2 px-3"
+                            />
+                            {errors.cidade && <p className="text-sm text-red-500 mt-1">{errors.cidade}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
+                          {/* Numero Casa */}
                           <div>
-                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              CEP:</label>
+                            <label htmlFor="numeroRua" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da rua:
+                            </label>
                             <input
                               type="text"
-                              id="first_name"
-                              value={cep}
-                              onChange={(e) => setCep(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
-                            />
-                             {errors.cep && <p style={{ color: "red" }}>{errors.cep}</p>}
-                          </div>
-                          <div>
-                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Cidade:</label>
-                            <input
-                              type="text"
-                              id="last_name"
-                              value={cidade}
-                              onChange={(e) => setCidade(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
-                            />
-                             {errors.cidade && <p style={{ color: "red" }}>{errors.cidade}</p>}
-                          </div>
-                          <div>
-                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Numero da Rua:</label>
-                            <input
-                              type="text"
-                              id="last_name"
+                              id="numeroRua"
                               value={numeroRua}
                               onChange={(e) => setNumeroRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-full rounded-lg text-black border py-2 px-3"
                             />
-                             {errors.numerorua && <p style={{ color: "red" }}>{errors.numerorua}</p>}
+                            {errors.numeroRua && <p className="text-sm text-red-500 mt-1">{errors.numeroRua}</p>}
                           </div>
+
+                          {/* Numero Casa */}
                           <div>
-                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Numero da Casa:</label>
+                            <label htmlFor="numeroCasa" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da casa:
+                            </label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="numeroCasa"
                               value={numeroCasa}
                               onChange={(e) => setNumeroCasa(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-full rounded-lg text-black border py-2 px-3"
                             />
-                             {errors.numerocasa && <p style={{ color: "red" }}>{errors.numerocasa}</p>}
+                            {errors.numeroCasa && <p className="text-sm text-red-500 mt-1">{errors.numeroCasa}</p>}
                           </div>
                         </div>
                       </div>
-                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+
+                      <div className="mt-8 flex justify-end gap-4">
                         <button
                           onClick={abreFechaJanelaCadastro}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700">
                           Cancelar
                         </button>
                         <button
                           onClick={handleSubmit}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700">
                           Salvar
                         </button>
                       </div>
@@ -573,6 +622,7 @@ const Page = () => {
                 </div>
               </div>
             )}
+
 
             {/* Janela para pesquisar o aluno e apenas exibir seus dados */}
             {isBuscarPesquisa && (

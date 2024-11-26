@@ -56,7 +56,7 @@ const Page = () => {
                   <img alt="" src="https://assets.website-files.com/6357722e2a5f19121d37f84d/6357722e2a5f190b7e37f878_EnvelopeSimple.svg" className="absolute bottom-0 left-[5%] right-auto top-[26%] inline-block" />
                   <input
                     type="email"
-                    className="mt-4 mb-4 block h-9 w-full border border-black bg-[#f2f2f7] px-20 py-6 pl-14 text-sm text-[#333333] rounded-full"
+                    className="mt-20 mb-4 block h-9 w-full border border-black bg-[#f2f2f7] px-20 py-6 pl-14 text-sm text-[#333333] rounded-full"
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
