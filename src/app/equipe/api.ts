@@ -15,6 +15,17 @@ export interface ICreateInstrutor {
   usuario: number
 }
 
+export interface ICreateUsuario {
+  login: string
+  senha: string
+  nome: string
+  status: string
+  // ultimaAlteracao: usuario.login, // usuario logado
+  // dataUltimaAlteracao: new Date(),
+  // usuario: usuario.id
+  nivelDeAcesso: string
+}
+
 export interface IUpdateInstrutor {
   nome?: string
   dataNascimento?: Date
@@ -47,7 +58,7 @@ export interface IInstrutor {
   cidade: string;
 }
 
-export const callCreate = async (data: ICreateInstrutor): Promise<ICreateInstrutor> => {
+export const callCreateInstrutor = async (data: ICreateInstrutor): Promise<ICreateInstrutor> => {
   const response = await fetch('http://localhost:3001/instrutor', {
     method: 'POST',
     headers: {
@@ -60,6 +71,24 @@ export const callCreate = async (data: ICreateInstrutor): Promise<ICreateInstrut
 
   } else {
     throw new Error(`Erro ao criar instrutor: ${response.statusText}`);
+  }
+
+  return await response.json()
+}
+
+export const callCreateUsuario = async (data: ICreateUsuario): Promise<ICreateUsuario> => {
+  const response = await fetch('http://localhost:3001/usuario', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  })
+
+  if (response.ok) {
+
+  } else {
+    throw new Error(`Erro ao criar usuario: ${response.statusText}`);
   }
 
   return await response.json()
@@ -79,7 +108,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // Authorization: `Bearer ${token}` // Adiciona o token no header da requisição
+        // Authorization: Bearer ${token} // Adiciona o token no header da requisição
       },
     });
 
@@ -89,8 +118,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
 
     // Retorna os dados do instrutor
     const data = await response.text();
-    const json = await JSON.parse(data)
-    console.error('Dados do instrutor:',)
+    const json = JSON.parse(data)
     return await json;
   } catch (error) {
     console.error('Erro ao buscar instrutor:', error);
@@ -100,7 +128,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
 
 export const updateInstrutor = async (cpf: string, data: IUpdateInstrutor) => {
   try {
-    const response = await fetch(`http://localhost:3001/instrutor/${cpf}`, {
+    const response = await fetch('http://localhost:3001/instrutor/${cpf}', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
