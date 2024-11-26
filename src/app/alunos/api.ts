@@ -54,16 +54,21 @@ export const callCreate = async (data: ICreateAluno): Promise<ICreateAluno> => {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(data)
-  })
+  });
 
   if (response.ok) {
-
+    return await response.json();
   } else {
-    throw new Error(`Erro ao criar aluno: ${response.statusText}`);
-  }
+    const errorData = await response.json();
 
-  return await response.json()
-}
+    // Em vez de lançar um erro genérico, jogue as mensagens de erro detalhadas
+    const error = new Error('Erro ao criar aluno') as any;
+    error.message = errorData.message; // Aqui você coloca as mensagens de erro detalhadas
+    error.status = response.status; // Você pode também adicionar o status da requisição
+    throw error;
+  }
+};
+
 
 export const getTodos = async (): Promise<IAluno[]> => {
   const response = await fetch('http://localhost:3001/alunos')

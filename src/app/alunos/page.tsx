@@ -2,6 +2,27 @@
 import { useEffect, useState } from "react";
 import { callCreate, getAluno, getTodos, IAluno, ICreateAluno, updateAluno } from "./api";
 import { useAuth } from "@/context/auth";
+import { z } from 'zod';
+
+const formSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório").max(50, "Nome não pode ser maior que 50 caracteres"),
+  datanascimento: z.string().email("data de nascimento inválido"),
+  cpf: z.string().min(1,{message: "CPF é obrigatório"}),
+  telefone: z.string().length(11, { message: "Telefone deve ter 11 dígitos" }).regex(/^\d+$/, {
+    message: "Telefone deve conter apenas números",
+  }),
+  rua: z.string().min(1, { message: "Rua é obrigatória" }),
+  numeroRua: z.string().min(1, { message: "Número da rua é obrigatório" }),
+  numeroCasa: z.string().min(1, { message: "Número da casa é obrigatório" }),
+  cep: z.string().length(8, { message: "CEP deve ter 8 dígitos" }).regex(/^\d+$/, {
+    message: "CEP deve conter apenas números",
+  }),
+  bairro: z.string().min(1, { message: "Bairro é obrigatório" }),
+  cidade: z.string().min(1, { message: "Cidade é obrigatória" }),
+});
+
+const cpfRegex = /^[0-9]{11}$/;
+
 
 function formataDataBr(data: Date) {
   const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
@@ -69,6 +90,7 @@ const Page = () => {
   const abreFechaJanelaCadastro = () => {
     limpaCampos()
     setIsJanelaCadastro(!isJanelaCadastro);
+    setErrors({});
   }
 
   const abreFechaJanelaDadosAlunoPesquisado = () => {
@@ -198,6 +220,65 @@ const Page = () => {
     }
   }
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+  
+    try {
+      // Validação dos dados com o Zod
+      const validatedData = formSchema.parse({
+        name: nome,
+        datanascimento: `${dia}/${mes}/${ano}`,
+        cpf: cpf,
+        telefone: telefone,
+        rua: rua,
+        numeroCasa: numeroCasa,
+        cep: cep,
+        bairro: bairro,
+        cidade: cidade,
+
+        
+        // Ajuste conforme necessário
+      });
+  
+      // Se passar pela validação, a execução segue
+      const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+      if (usuario != null) {
+        await callCreate({
+          nome,
+          dataNascimento,
+          cpf,
+          telefone,
+          status: "Ativo",
+          ultimaAlteracao: usuario.login,
+          dataUltimaAlteracao: new Date(),
+          rua,
+          numeroRua,
+          numeroCasa,
+          cep,
+          bairro,
+          cidade,
+          usuario: usuario.id,
+        });
+  
+        // Limpa os campos e fecha o modal
+        limpaCampos();
+        setErrors({});
+        setIsJanelaCadastro(!isJanelaCadastro);
+      }
+  
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
+    }
+  };
+  
   return (
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
@@ -343,6 +424,7 @@ const Page = () => {
                               onChange={(e) => setNome(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3"
                             />
+                             {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
                           </div>
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
@@ -353,8 +435,9 @@ const Page = () => {
                               id="last_name"
                               value={cpf}
                               onChange={(e) => setCpf(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-2 px-3"
                             />
+                            {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
@@ -368,6 +451,7 @@ const Page = () => {
                               onChange={(e) => setDia(e.target.value)}
                               className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
                             />
+                            
                             <input
                               type="text"
                               id="mes"
@@ -393,6 +477,7 @@ const Page = () => {
                               onChange={(e) => setRua(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3 "
                             />
+                             {errors.rua && <p style={{ color: "red" }}>{errors.rua}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
@@ -405,6 +490,7 @@ const Page = () => {
                               value={telefone}
                               onChange={(e) => setTelefone(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3" />
+                               {errors.telefone && <p style={{ color: "red" }}>{errors.telefone}</p>}
                           </div>
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
@@ -416,6 +502,7 @@ const Page = () => {
                               onChange={(e) => setBairro(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3 "
                             />
+                             {errors.bairro && <p style={{ color: "red" }}>{errors.bairro}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
@@ -429,6 +516,7 @@ const Page = () => {
                               onChange={(e) => setCep(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3"
                             />
+                             {errors.cep && <p style={{ color: "red" }}>{errors.cep}</p>}
                           </div>
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
@@ -440,6 +528,7 @@ const Page = () => {
                               onChange={(e) => setCidade(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3 "
                             />
+                             {errors.cidade && <p style={{ color: "red" }}>{errors.cidade}</p>}
                           </div>
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
@@ -451,6 +540,7 @@ const Page = () => {
                               onChange={(e) => setNumeroRua(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3 "
                             />
+                             {errors.numerorua && <p style={{ color: "red" }}>{errors.numerorua}</p>}
                           </div>
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
@@ -462,6 +552,7 @@ const Page = () => {
                               onChange={(e) => setNumeroCasa(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3 "
                             />
+                             {errors.numerocasa && <p style={{ color: "red" }}>{errors.numerocasa}</p>}
                           </div>
                         </div>
                       </div>
@@ -472,7 +563,7 @@ const Page = () => {
                           Cancelar
                         </button>
                         <button
-                          onClick={registraAluno}
+                          onClick={handleSubmit}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
                           Salvar
                         </button>
