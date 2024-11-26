@@ -39,11 +39,9 @@ const Page = () => {
 
   const [login, setLogin] = useState('')
   const [senha, setSenha] = useState('')
-  const [instrutorCpf, setInstrutorCpf] = useState('')
   const [nivelDeAcesso, setNivelDeAcesso] = useState('')
 
   const [instrutor, setInstrutor] = useState<ICreateInstrutor | null>(null); // Inicialmente vazio
-  const [instrutorParaCadastrarUsuario, setInstrutorParaCadastrarUsuario] = useState<IInstrutor | null>(null); // Inicialmente vazio
   const [buscaCpf, setBuscaCpf] = useState('')
   const [cpfAtual, setCpfAtual] = useState('')
 
@@ -213,26 +211,21 @@ const Page = () => {
 
   const registraUsuario = async () => {
     try {
-      setInstrutorParaCadastrarUsuario(await getInstrutor(instrutorCpf))
-      if (instrutorParaCadastrarUsuario != null) {
-        const instrutor = instrutorParaCadastrarUsuario.id.toString()
-        if (usuario != null) {
-          await callCreateUsuario(
-            {
-              login,
-              senha,
-              nome,
-              status: "Ativo",
-              // ultimaAlteracao: usuario.login, // usuario logado
-              // dataUltimaAlteracao: new Date(),
-              // usuario: usuario.id
-              nivelDeAcesso,
-              instrutor,
-            }
-          );
-          limpaCampos()
-          setIsJanelaCadastroUsuario(!isJanelaCadastroUsuario)
-        }
+      if (usuario != null) {
+        await callCreateUsuario(
+          {
+            login,
+            senha,
+            nome,
+            status: "Ativo",
+            // ultimaAlteracao: usuario.login, // usuario logado
+            // dataUltimaAlteracao: new Date(),
+            // usuario: usuario.id
+            nivelDeAcesso
+          }
+        );
+        limpaCampos()
+        setIsJanelaCadastroUsuario(!isJanelaCadastroUsuario)
       }
     } catch (error) {
       console.error(error)
@@ -944,7 +937,7 @@ const Page = () => {
                       className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
                       Cadastro de usuário:
                     </label>
-                    <div className="w-full  mx-auto">
+                    <div className="w-full mx-auto mt-20">
                       <div className="mb-6">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -995,21 +988,8 @@ const Page = () => {
                             />
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
-                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Instrutor (CPF):</label>
-                            <input
-                              type="text"
-                              id="first_name"
-                              value={instrutorCpf}
-                              onChange={(e) => setInstrutorCpf(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
-                            />
-                          </div>
-                        </div>
                       </div>
-                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+                      <div className="flex justify-end gap-4">
                         <button
                           onClick={abreFechaJanelaCadastroUsuario}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
