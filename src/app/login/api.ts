@@ -10,7 +10,6 @@ export interface ILoginResponse {
 export interface IUsuario {
   id: number
   login: string
-  senha: string
   nome: string
   status: string
   nivelDeAcesso: number
