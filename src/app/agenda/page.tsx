@@ -87,8 +87,8 @@ const Page = () => {
 
   const registraAula = async (event: React.FormEvent) => {
     event.preventDefault();
-    let horaComeco = new Date()
-    let horaFim = new Date()
+    let horaComeco = new Date();
+    let horaFim = new Date();
     try {
       // Validação dos dados com o Zod
       formSchemaAula.parse({
@@ -96,15 +96,16 @@ const Page = () => {
         horario: horario,
         cpf: instrutorCpf,
       });
+
       try {
-        setErrors({})
+        setErrors({});
         horaComeco = new Date(
           parseInt(ano),
           parseInt(mes) - 1,
           parseInt(dia),
           parseInt(hora),
           parseInt(minuto)
-        )
+        );
 
         horaFim = new Date(
           parseInt(ano),
@@ -112,17 +113,22 @@ const Page = () => {
           parseInt(dia),
           parseInt(hora) + 1,
           parseInt(minuto)
-        )
-        const aula = await getAula(horaComeco) // Retorna erro Not Found se a aula ja nao estiver registrada
+        );
+        // Verifica se a data/hora da aula já passou
+        if (horaComeco < new Date()) {
+          throw new Error("Não é permitido registrar uma aula em um dia ou horário que já passou.");
+        }
+
+        const aula = await getAula(horaComeco); // Retorna erro "Not Found" se a aula não estiver registrada
         if (aula != null) {
-          throw new Error("Aula ja registrada") // Se a aula ja existir, nao faz um novo cadastro
+          throw new Error("Aula já registrada"); // Se a aula já existir, não faz um novo cadastro
         }
       } catch (error: any) {
         if (error.message === "Not Found") {
           if (usuario != null) {
-            setDadosInstrutor(await getInstrutor(instrutorCpf))
+            setDadosInstrutor(await getInstrutor(instrutorCpf));
             if (dadosInstrutor != null) {
-              const instrutor = dadosInstrutor.id
+              const instrutor = dadosInstrutor.id;
               await callCreateAula(
                 {
                   data, // remover
@@ -131,15 +137,18 @@ const Page = () => {
                   qtdeVagas: 5,
                   qtdeVagasDisponiveis: 5,
                   status: "Ativo",
-                  instrutor
+                  instrutor,
                 }
               );
-              setIsModalOpen(!isModalOpen)
+              setIsModalOpen(!isModalOpen);
             }
           }
         }
-        if (error.message === "Aula ja registrada") {
-          alert("Erro: Aula ja registrada.")
+        if (error.message === "Aula já registrada") {
+          alert("Erro: Aula já registrada.");
+        }
+        if (error.message === "Não é permitido registrar uma aula em um dia ou horário que já passou.") {
+          alert(error.message); // Exibe a mensagem para o usuário
         }
       }
     } catch (error: any) {
@@ -153,18 +162,13 @@ const Page = () => {
       }
       // console.error(error)
     }
-  }
+  };
+
 
   const registraAlunoAula = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      // Validação dos dados com o Zod
-      formSchemaAlunoAula.parse({
-        dataAula: `${dia}/${mes}/${ano}`,
-        horario: horario,
-        tipoDeAula: tipoDeAula,
-      });
-      setErrors({})
+      // Validação inicial para verificar se o horário já passou
       const horaComeco = new Date(
         parseInt(ano),
         parseInt(mes) - 1,
@@ -172,29 +176,39 @@ const Page = () => {
         parseInt(hora),
         parseInt(minuto)
       );
+      if (horaComeco < new Date()) {
+        throw new Error("Não é permitido agendar em um dia ou horário que já passou.");
+      }
+
+      // Validação dos dados com o Zod
+      formSchemaAlunoAula.parse({
+        dataAula: `${dia}/${mes}/${ano}`,
+        horario: horario,
+        tipoDeAula: tipoDeAula,
+      });
+      setErrors({});
+
       if (usuario != null) {
-        const aula = await getAula(horaComeco)
+        const aula = await getAula(horaComeco);
         if (aula.qtdeVagasDisponiveis == 0) {
-          throw new Error("Vagas ocupadas")
+          throw new Error("Vagas ocupadas");
         }
         if (aula != null && aluno != null) {
-          const verificaSeJaExiste = await verificaAlunoAula(aluno.id, aula.id)
+          const verificaSeJaExiste = await verificaAlunoAula(aluno.id, aula.id);
           if (verificaSeJaExiste) {
-            alert("Aluno ja cadastrado para essa aula.")
+            alert("Aluno já cadastrado para essa aula.");
           } else {
             await callCreateAlunoAula({
               aluno,
               aula,
-              tipoDeAula
-            })
-            // console.error(aula.qtdeVagasDisponiveis)
-            aula.qtdeVagasDisponiveis -= 1
-            // console.error(aula.qtdeVagasDisponiveis)
+              tipoDeAula,
+            });
+            aula.qtdeVagasDisponiveis -= 1; // Reduz a quantidade de vagas disponíveis
             const updateData: IUpdateAula = {
-              qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis
-            }
-            await updateAula(aula.id, updateData) // Atualiza a quantidade de vagas disponíveis na aula
-            setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
+              qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis,
+            };
+            await updateAula(aula.id, updateData); // Atualiza a quantidade de vagas disponíveis na aula
+            setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula);
           }
         }
       }
@@ -208,13 +222,17 @@ const Page = () => {
         setErrors(newErrors); // Atualiza o estado de erros
       }
       if (error.message === "Not Found") {
-        alert("Erro: Não há aula registrada para o horário informado.")
+        alert("Erro: Não há aula registrada para o horário informado.");
       }
       if (error.message === "Vagas ocupadas") {
-        alert("Erro: Não há vagas para o horário informado.")
+        alert("Erro: Não há vagas para o horário informado.");
+      }
+      if (error.message === "Não é permitido agendar em um dia ou horário que já passou.") {
+        alert(error.message); // Exibe a mensagem de erro caso o horário já tenha passado
       }
     }
-  }
+  };
+
 
   const handlePesquisarAluno = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -295,7 +313,7 @@ const Page = () => {
         <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
           <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
             <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
-            <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
+            <div className="mx-auto w-full mt-12 mb-[600px] pb-4 ">
               <div className="relative">
                 <h1
                   className="font-bold font-spartan text-[30px] text-white">
@@ -365,6 +383,9 @@ const Page = () => {
           </div>
           <div className="mt-8" >
             <Calendar onDateChange={handleDateChange} />
+            {isJanelaAulasSeguintes && (
+              <AulaList aulas={aulas} onSelectAula={handleSelectAula}></AulaList>
+            )}
           </div>
 
           <div>
@@ -633,9 +654,7 @@ const Page = () => {
               </div>
             )}
 
-            {isJanelaAulasSeguintes && (
-              <AulaList aulas={aulas} onSelectAula={handleSelectAula}></AulaList>
-            )}
+
           </div>
         </div>
       </div>

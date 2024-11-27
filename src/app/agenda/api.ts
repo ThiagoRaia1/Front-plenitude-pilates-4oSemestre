@@ -1,4 +1,5 @@
 import { IAluno } from "../alunos/api"
+import { IInstrutor } from "../equipe/api"
 
 export interface ICreateAula {
   data: Date
@@ -56,7 +57,7 @@ export interface IAula {
   qtdeVagas: number
   qtdeVagasDisponiveis: number
   status: string
-  instrutor: number
+  instrutor: IInstrutor
   alunos: IAluno[]
 }
 

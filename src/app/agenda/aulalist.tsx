@@ -54,15 +54,20 @@ const AulaList = ({ aulas, onSelectAula }: { aulas: IAula[] | null; onSelectAula
                         <p><strong>Hora de Fim:</strong> {new Date(aula.horaFim).toLocaleTimeString()}</p>
                         <p><strong>Vagas:</strong> {aula.qtdeVagas}</p>
                         <p><strong>Vagas Disponíveis:</strong> {aula.qtdeVagasDisponiveis}</p>
-                        <p><strong>Instrutor ID:</strong> {"aula.instrutor"}</p>
+                        <p><strong>Instrutor:</strong> {aula.instrutor.nome}</p>
                     </div>
                 ))}
+
+
             </div>
 
             {/* Detalhes da Aula Selecionada */}
             <div className="flex flex-col bg-gray-50 border border-gray-300 rounded-md shadow-md mt-4 p-4">
-                <h2 className="text-lg font-bold text-black mb-4">
+                <h2 className="text-lg font-bold text-black">
                     Alunos registrados na aula do dia {selectedAula && new Date(selectedAula.data).toLocaleDateString()} às {selectedAula && new Date(selectedAula.horaComeco).toLocaleTimeString()}
+                </h2>
+                <h2 className="text-lg font-bold text-black mb-4">
+                    Instrutor: {selectedAula && selectedAula.instrutor.nome}
                 </h2>
                 {selectedAula ? (
                     <ul>
