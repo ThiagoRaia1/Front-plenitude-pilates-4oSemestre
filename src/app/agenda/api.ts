@@ -105,3 +105,25 @@ export const updateAula = async (id: number, data: IUpdateAula) => {
     throw error; // Repassa o erro para ser tratado onde a função for chamada
   }
 };
+
+export const verificaAlunoAula = async (alunoId: number, aulaId: number): Promise<boolean> => {
+  try {
+    const response = await fetch(`http://localhost:3001/alunoaula/verifica`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ aluno: alunoId, aula: aulaId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao verificar aluno e aula');
+    }
+
+    const data = await response.json();
+    return data.existe; // Retorna true se existir, false caso contrário
+  } catch (error) {
+    console.error('Erro na verificação:', error);
+    throw error;
+  }
+};

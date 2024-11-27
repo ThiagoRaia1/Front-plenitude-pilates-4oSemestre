@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react";
-import { callCreateAlunoAula, callCreateAula, getAula, IAula, IUpdateAula, updateAula } from "./api";
+import { callCreateAlunoAula, callCreateAula, getAula, IAula, IUpdateAula, updateAula, verificaAlunoAula } from "./api";
 import Calendar from "../calendar/page";
 import { useAuth } from "@/context/auth";
 import { getInstrutor, IInstrutor } from "../equipe/api";
@@ -182,19 +182,24 @@ const Page = () => {
           throw new Error("Vagas ocupadas")
         }
         if (aula != null && aluno != null) {
-          await callCreateAlunoAula({
-            aluno,
-            aula,
-            tipoDeAula
-          })
-          // console.error(aula.qtdeVagasDisponiveis)
-          aula.qtdeVagasDisponiveis -= 1
-          // console.error(aula.qtdeVagasDisponiveis)
-          const updateData: IUpdateAula = {
-            qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis
+          const verificaSeJaExiste = await verificaAlunoAula(aluno.id, aula.id)
+          if (verificaSeJaExiste) {
+            alert("Aluno ja cadastrado para essa aula.")
+          } else {
+            await callCreateAlunoAula({
+              aluno,
+              aula,
+              tipoDeAula
+            })
+            // console.error(aula.qtdeVagasDisponiveis)
+            aula.qtdeVagasDisponiveis -= 1
+            // console.error(aula.qtdeVagasDisponiveis)
+            const updateData: IUpdateAula = {
+              qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis
+            }
+            await updateAula(aula.id, updateData)
+            setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
           }
-          await updateAula(aula.id, updateData)
-          setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
         }
       }
     } catch (error: any) {
