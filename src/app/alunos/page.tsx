@@ -148,7 +148,7 @@ const Page = () => {
       formSchemaCpf.parse({
         cpf: buscaCpf,
       });
-      setAluno(await getAluno(buscaCpf))
+      const aluno: IAluno = await getAluno(buscaCpf)
       if (aluno != null) {
         setIsBuscarPesquisa(!isBuscarPesquisa); // Fecha a janela de busca de aluno por cpf
         setIsJanelaDadosAlunoPesquisado(!isJanelaDadosAlunoPesquisado); // Abre a janela de registro de aluno para exibir os dados, alterar para uma nova janela de exibicao apenas
@@ -186,7 +186,7 @@ const Page = () => {
         cpf: buscaCpf,
       });
       limpaCampos()
-      setAluno(await getAluno(buscaCpf))
+      const aluno: IAluno = await getAluno(buscaCpf)
       if (aluno != null) {
         setCpfAtual(aluno.cpf)
         setIsBuscarEditar(!isBuscarEditar); // Fecha a janela de busca de aluno por cpf
@@ -283,32 +283,39 @@ const Page = () => {
         cidade: cidade,
         // Ajuste conforme necessário
       });
+      const aluno: IAluno = await getAluno(cpf)
+      if (aluno != null) {
+        alert("CPF ja cadastrado.")
+      } else {
+        // Se passar pela validação, a execução segue
+        const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+        if (usuario != null) {
+          await callCreate({
+            nome,
+            dataNascimento,
+            cpf,
+            telefone,
+            status: "Ativo",
+            ultimaAlteracao: usuario.login,
+            dataUltimaAlteracao: new Date(),
+            rua,
+            numeroRua,
+            numeroCasa,
+            cep,
+            bairro,
+            cidade,
+            usuario: usuario.id,
+          });
 
-      // Se passar pela validação, a execução segue
-      const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
-      if (usuario != null) {
-        await callCreate({
-          nome,
-          dataNascimento,
-          cpf,
-          telefone,
-          status: "Ativo",
-          ultimaAlteracao: usuario.login,
-          dataUltimaAlteracao: new Date(),
-          rua,
-          numeroRua,
-          numeroCasa,
-          cep,
-          bairro,
-          cidade,
-          usuario: usuario.id,
-        });
-
-        // Limpa os campos e fecha o modal
-        limpaCampos();
-        setErrors({});
-        setIsJanelaCadastro(!isJanelaCadastro);
+          // Limpa os campos e fecha o modal
+          limpaCampos();
+          setErrors({});
+          setIsJanelaCadastro(!isJanelaCadastro);
+        }
       }
+
+
+
 
     } catch (error) {
       if (error instanceof z.ZodError) {
