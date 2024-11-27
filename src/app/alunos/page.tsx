@@ -17,10 +17,10 @@ const formSchema = z.object({
 
   // Verifica se a data digita é válida e se está no formato 99/99/9999
   dataNascimento: z.string()
-  .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, 
-    { message: "Data inválida" }
-  )
-  .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+    .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+      { message: "Data inválida" }
+    )
+    .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
 
   cpf: z.string()
     // Verifica se esta no formato XXX.XXX.XXX-XX
@@ -129,10 +129,12 @@ const Page = () => {
   }
 
   const abreFechaJanelaPesquisarAluno = () => {
+    setErrors({});
     setIsBuscarPesquisa(!isBuscarPesquisa);
   }
 
   const abreFechaJanelaPesquisarAlunoParaEditar = () => {
+    setErrors({});
     setIsBuscarEditar(!isBuscarEditar);
   }
 
@@ -216,25 +218,22 @@ const Page = () => {
     }
   };
 
+  const handleUpdate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      formSchema.parse({
+        name: nome,
+        dataNascimento: `${dia}/${mes}/${ano}`,
+        cpf: cpf,
+        telefone: telefone,
+        rua: rua,
+        numeroRua: numeroRua,
+        numeroCasa: numeroCasa,
+        cep: cep,
+        bairro: bairro,
+        cidade: cidade,
+      });
 
-    const handleUpdate = async (event: React.FormEvent) => {
-      event.preventDefault();
-      try {
-        formSchema.parse({
-          name: nome,
-          dataNascimento: `${dia}/${mes}/${ano}`,
-          cpf: cpf,
-          telefone: telefone,
-          rua: rua,
-          numeroRua: numeroRua,
-          numeroCasa: numeroCasa,
-          cep: cep,
-          bairro: bairro,
-          cidade: cidade,
-  
-  
-        });
-        
       if (aluno != null && usuario != null) {
         const updateData = {
           nome,
@@ -267,7 +266,7 @@ const Page = () => {
   };
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmitCriarAluno = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
       // Validação dos dados com o Zod
@@ -282,8 +281,6 @@ const Page = () => {
         cep: cep,
         bairro: bairro,
         cidade: cidade,
-
-
         // Ajuste conforme necessário
       });
 
@@ -329,7 +326,7 @@ const Page = () => {
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
         <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
-          <div className="max-w-lg text-center  ">
+          <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
             <img alt="" src="/usuario.png" className="relative inline-block w-100 h-100" />
             <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
               <div className="relative">
@@ -381,8 +378,8 @@ const Page = () => {
           </div>
         </div>
 
-        <div className=" bg-no-repeat bg-cover  " style={{ backgroundImage: "url('fundo.png')" }}>
-          <div className="flex flex justify-end gap-4">
+        <div className=" bg-no-repeat bg-cover" style={{ backgroundImage: "url('fundo.png')" }}>
+          <div className="flex justify-end gap-4">
             <button
               onClick={abreFechaJanelaCadastro}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
@@ -400,7 +397,7 @@ const Page = () => {
             </button>
             <button
               onClick={abreFechaJanelaPesquisarAluno}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[55px]">
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[40px]">
               Excluir aluno
             </button>
           </div>
@@ -612,7 +609,7 @@ const Page = () => {
                           Cancelar
                         </button>
                         <button
-                          onClick={handleSubmit}
+                          onClick={handleSubmitCriarAluno}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-8 py-1 rounded-lg hover:bg-teal-700">
                           Salvar
                         </button>
@@ -872,163 +869,163 @@ const Page = () => {
 
             {isJanelaEditarAluno && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-              <div className="bg-[#ececec] rounded-lg w-[1000px] h-[630px] border-4 border-[#ececec] p-6">
-                <div className="absolute top-[45px] left-1/2 transform -translate-x-1/2 bg-white rounded-lg border-4 border-[#9f968a] px-4 py-1 z-10">
-                  <label
-                    htmlFor="first_name"
-                    className="text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]">
-                    Editar Aluno:
-                  </label>
-                </div>
-                <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
-                  <div className="w-full  mx-auto">
-                    <div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="min-h-[90px]">
-                          <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Nome:
-                          </label>
-                          <input
-                            type="text"
-                            id="first_name"
-                            value={nome}
-                            onChange={(e) => setNome(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3"
-                          />
-                          {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[630px] border-4 border-[#ececec] p-6">
+                  <div className="absolute top-[45px] left-1/2 transform -translate-x-1/2 bg-white rounded-lg border-4 border-[#9f968a] px-4 py-1 z-10">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]">
+                      Editar Aluno:
+                    </label>
+                  </div>
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <div className="w-full  mx-auto">
+                      <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Nome:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={nome}
+                              onChange={(e) => setNome(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3"
+                            />
+                            {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
+                          </div>
+                          <div className="min-h-[90px]">
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CPF - 999.999.999-99:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={cpf}
+                              onChange={(e) => setCpf(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3"
+                            />
+                            {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
+                          </div>
                         </div>
-                        <div className="min-h-[90px]">
-                          <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            CPF - 999.999.999-99:
-                          </label>
-                          <input
-                            type="text"
-                            id="last_name"
-                            value={cpf}
-                            onChange={(e) => setCpf(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3"
-                          />
-                          {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Data de nascimento: dd/mm/aaaa</label>
+                            <input
+                              type="text"
+                              id="dia"
+                              value={dia}
+                              onChange={(e) => setDia(e.target.value)}
+                              className="w-[100px] rounded-lg text-black border py-1 px-[8px] mr-2"
+                            />
+                            <input
+                              type="text"
+                              id="mes"
+                              value={mes}
+                              onChange={(e) => setMes(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
+                            />
+                            <input
+                              type="text"
+                              id="ano"
+                              value={ano}
+                              onChange={(e) => setAno(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
+                            />
+                            {errors.dataNascimento && <p style={{ color: "red" }}>{errors.dataNascimento}</p>}
+                          </div>
+                          <div className="min-h-[90px]">
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Rua:</label>
+                            <input
+                              type="text"
+                              id="rua"
+                              value={rua}
+                              onChange={(e) => setRua(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
+                            />
+                            {errors.rua && <p style={{ color: "red" }}>{errors.rua}</p>}
+                          </div>
                         </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="min-h-[90px]">
-                          <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Data de nascimento: dd/mm/aaaa</label>
-                          <input
-                            type="text"
-                            id="dia"
-                            value={dia}
-                            onChange={(e) => setDia(e.target.value)}
-                            className="w-[100px] rounded-lg text-black border py-1 px-[8px] mr-2"
-                          />
-                          <input
-                            type="text"
-                            id="mes"
-                            value={mes}
-                            onChange={(e) => setMes(e.target.value)}
-                            className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
-                          />
-                          <input
-                            type="text"
-                            id="ano"
-                            value={ano}
-                            onChange={(e) => setAno(e.target.value)}
-                            className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
-                          />
-                          {errors.dataNascimento && <p style={{ color: "red" }}>{errors.dataNascimento}</p>}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Telefone - (99)99999-9999:</label>
+                            <input
+                              type="text"
+                              id="telefone"
+                              value={telefone}
+                              onChange={(e) => setTelefone(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3" />
+                            {errors.telefone && <p style={{ color: "red" }}>{errors.telefone}</p>}
+                          </div>
+                          <div className="min-h-[90px]">
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Bairro:</label>
+                            <input
+                              type="text"
+                              id="bairro"
+                              value={bairro}
+                              onChange={(e) => setBairro(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
+                            />
+                            {errors.bairro && <p style={{ color: "red" }}>{errors.bairro}</p>}
+                          </div>
                         </div>
-                        <div className="min-h-[90px]">
-                          <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Rua:</label>
-                          <input
-                            type="text"
-                            id="rua"
-                            value={rua}
-                            onChange={(e) => setRua(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3 "
-                          />
-                          {errors.rua && <p style={{ color: "red" }}>{errors.rua}</p>}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="min-h-[90px]">
-                          <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Telefone - (99)99999-9999:</label>
-                          <input
-                            type="text"
-                            id="telefone"
-                            value={telefone}
-                            onChange={(e) => setTelefone(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3" />
-                          {errors.telefone && <p style={{ color: "red" }}>{errors.telefone}</p>}
-                        </div>
-                        <div className="min-h-[90px]">
-                          <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Bairro:</label>
-                          <input
-                            type="text"
-                            id="bairro"
-                            value={bairro}
-                            onChange={(e) => setBairro(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3 "
-                          />
-                          {errors.bairro && <p style={{ color: "red" }}>{errors.bairro}</p>}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="min-h-[90px]">
-                          <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            CEP - 99999-999:</label>
-                          <input
-                            type="text"
-                            id="cep"
-                            value={cep}
-                            onChange={(e) => setCep(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3"
-                          />
-                          {errors.cep && <p style={{ color: "red" }}>{errors.cep}</p>}
-                        </div>
-                        <div className="min-h-[90px]">
-                          <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Cidade:</label>
-                          <input
-                            type="text"
-                            id="cidade"
-                            value={cidade}
-                            onChange={(e) => setCidade(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3 "
-                          />
-                          {errors.cidade && <p style={{ color: "red" }}>{errors.cidade}</p>}
-                        </div>
-                        <div className="min-h-[90px]">
-                          <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Numero da Rua:</label>
-                          <input
-                            type="text"
-                            id="numeroRua"
-                            value={numeroRua}
-                            onChange={(e) => setNumeroRua(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3 "
-                          />
-                          {errors.numeroRua && <p style={{ color: "red" }}>{errors.numeroRua}</p>}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
+                            <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CEP - 99999-999:</label>
+                            <input
+                              type="text"
+                              id="cep"
+                              value={cep}
+                              onChange={(e) => setCep(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3"
+                            />
+                            {errors.cep && <p style={{ color: "red" }}>{errors.cep}</p>}
+                          </div>
+                          <div className="min-h-[90px]">
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Cidade:</label>
+                            <input
+                              type="text"
+                              id="cidade"
+                              value={cidade}
+                              onChange={(e) => setCidade(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
+                            />
+                            {errors.cidade && <p style={{ color: "red" }}>{errors.cidade}</p>}
+                          </div>
+                          <div className="min-h-[90px]">
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Rua:</label>
+                            <input
+                              type="text"
+                              id="numeroRua"
+                              value={numeroRua}
+                              onChange={(e) => setNumeroRua(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
+                            />
+                            {errors.numeroRua && <p style={{ color: "red" }}>{errors.numeroRua}</p>}
 
-                        </div>
-                        <div className="min-h-[90px]">
-                          <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                            Numero da Casa:</label>
-                          <input
-                            type="text"
-                            id="numeroCasa"
-                            value={numeroCasa}
-                            onChange={(e) => setNumeroCasa(e.target.value)}
-                            className="w-80 rounded-lg text-black border py-1 px-3 "
-                          />
-                          {errors.numeroCasa && <p style={{ color: "red" }}>{errors.numeroCasa}</p>}
+                          </div>
+                          <div className="min-h-[90px]">
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Casa:</label>
+                            <input
+                              type="text"
+                              id="numeroCasa"
+                              value={numeroCasa}
+                              onChange={(e) => setNumeroCasa(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
+                            />
+                            {errors.numeroCasa && <p style={{ color: "red" }}>{errors.numeroCasa}</p>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  <div className=" flex justify-end gap-4 ml-[600px]">
+                      <div className=" flex justify-end gap-4 ml-[600px]">
                         <button
                           onClick={abreFechaJanelaEditarAluno}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-4 py-2 rounded-lg hover:bg-teal-700">
@@ -1045,7 +1042,6 @@ const Page = () => {
                 </div>
               </div>
             )}
-
           </div>
         </div>
       </div>

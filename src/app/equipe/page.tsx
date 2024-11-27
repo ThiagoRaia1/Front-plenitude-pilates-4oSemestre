@@ -2,6 +2,81 @@
 import { useEffect, useState } from "react";
 import { callCreateInstrutor, callCreateUsuario, getInstrutor, getTodos, IInstrutor, ICreateInstrutor, updateInstrutor } from "./api";
 import { useAuth } from "@/context/auth";
+import { z } from "zod";
+
+const formSchemaCpf = z.object({
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+});
+
+const formSchemaInstrutor = z.object({
+  name: z.string().min(1, "Nome é obrigatório").max(50, "Nome não pode ser maior que 50 caracteres"),
+
+  // Verifica se a data digita é válida e se está no formato 99/99/9999
+  dataNascimento: z.string()
+    .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+      { message: "Data inválida" }
+    )
+    .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+
+  telefone: z.string()
+    // Verifica o tamanho
+    .length(14, { message: "Telefone deve ter 14 dígitos" })
+    // Verifica se esta no formato (99)99999-9999
+    .regex(/^\(\d{2}\)\d{5}-\d{4}$/, { message: "Telefone deve conter o formato indicado", }),
+
+  rua: z.string().min(1, { message: "Rua é obrigatória" }),
+
+  cep: z.string()
+    // Verifica se esta no formato 99999-999
+    .regex(/^\d{5}-\d{3}$/, { message: "CEP deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(9, { message: "CEP deve ter 9 dígitos" }),
+
+  bairro: z.string().min(1, { message: "Bairro é obrigatório" }),
+
+  cidade: z.string().min(1, { message: "Cidade é obrigatória" }),
+
+  numeroRua: z.string()
+    .regex(/^\d+$/, { message: "O número da rua deve conter apenas números" })
+    .min(1, { message: "Número da rua é obrigatório" }),
+
+  numeroCasa: z.string()
+    .regex(/^\d+$/, { message: "O número da casa deve conter apenas números" })
+    .min(1, { message: "Número da casa é obrigatório" }),
+});
+
+const formSchemaCreateUsuario = z.object({
+  nome: z.string().min(1, "Nome é obrigatório").max(50, "Nome não pode ser maior que 50 caracteres"),
+
+  login: z
+    .string()
+    .email("Login deve ser um e-mail válido"),
+
+  senha: z
+    .string()
+    .min(8, "Senha deve ter no mínimo 8 caracteres")
+    .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
+    .regex(/[0-9]/, "Senha deve conter pelo menos um número")
+    .regex(/[\W_]/, "Senha deve conter pelo menos um caractere especial"),
+
+  nivelDeAcesso: z
+    .string()
+    .refine(
+      (val) => ["1", "2", "3"].includes(val),
+      "Nível de acesso deve ser um dos valores: 1, 2 ou 3"
+    ),
+});
 
 function formataDataBr(data: Date) {
   const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
@@ -47,6 +122,8 @@ const Page = () => {
 
   const [todos, setTodos] = useState<IInstrutor[]>([]) // Inicializa o estado com um array vazio
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
   useEffect(() => {
     const fetchTodos = async () => {
       const data = await getTodos()
@@ -68,40 +145,56 @@ const Page = () => {
     setCidade('')
     setNumeroRua('')
     setNumeroCasa('')
+    setLogin('')
+    setSenha('')
+    setNivelDeAcesso('')
+    setBuscaCpf('')
     setInstrutor(null)
   }
 
   const abreFechaJanelaCadastro = () => {
+    setErrors({});
     limpaCampos()
     setIsJanelaCadastro(!isJanelaCadastro);
   }
 
   const abreFechaJanelaCadastroUsuario = () => {
+    setErrors({});
     limpaCampos()
     setIsJanelaCadastroUsuario(!isJanelaCadastroUsuario);
   }
 
   const abreFechaJanelaDadosinstrutorPesquisado = () => {
+    setErrors({});
     setIsJanelaDadosInstrutorPesquisado(!isJanelaDadosInstrutorPesquisado);
   }
 
   const abreFechaJanelaPesquisarinstrutor = () => {
+    limpaCampos()
+    setErrors({});
     setIsBuscarPesquisa(!isBuscarPesquisa);
   }
 
   const abreFechaJanelaPesquisarinstrutorParaEditar = () => {
+    limpaCampos()
+    setErrors({});
     setIsBuscarEditar(!isBuscarEditar);
   }
 
   const abreFechaJanelaEditarinstrutor = () => {
+    setErrors({});
     setIsJanelaEditarInstrutor(!isJanelaEditarInstrutor);
   }
 
-  const handlePesquisar = async () => {
+  const handlePesquisar = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
-      setInstrutor(await getInstrutor(buscaCpf))
+      formSchemaCpf.parse({
+        cpf: buscaCpf,
+      });
+      const instrutor: IInstrutor = await getInstrutor(buscaCpf)
+      limpaCampos()
       if (instrutor != null) {
-        console.error(instrutor.nome)
         setIsBuscarPesquisa(!isBuscarPesquisa); // Fecha a janela de busca de instrutor por cpf
         setIsJanelaDadosInstrutorPesquisado(!isJanelaDadosInstrutorPesquisado); // Abre a janela de registro de instrutor para exibir os dados, alterar para uma nova janela de exibicao apenas
         // Exibe os dados na janela
@@ -120,16 +213,28 @@ const Page = () => {
         setNumeroCasa(instrutor.numeroCasa.toString())
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   };
 
-  const handlePesquisarParaEditar = async () => {
+  const handlePesquisarParaEditar = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      formSchemaCpf.parse({
+        cpf: buscaCpf,
+      });
+      const instrutor: IInstrutor = await getInstrutor(buscaCpf)
       limpaCampos()
-      setInstrutor(await getInstrutor(buscaCpf))
       if (instrutor != null) {
         setCpfAtual(instrutor.cpf)
+        setErrors({})
         setIsBuscarEditar(!isBuscarEditar); // Fecha a janela de busca de instrutor por cpf
         setIsJanelaEditarInstrutor(!isJanelaEditarInstrutor); // Abre a janela de edicao de instrutor para exibir os dados
         // Exibe os dados na janela
@@ -148,12 +253,32 @@ const Page = () => {
         setNumeroCasa(instrutor.numeroCasa.toString())
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      formSchemaInstrutor.parse({
+        name: nome,
+        dataNascimento: `${dia}/${mes}/${ano}`,
+        cpf: cpf,
+        telefone: telefone,
+        rua: rua,
+        numeroRua: numeroRua,
+        numeroCasa: numeroCasa,
+        cep: cep,
+        bairro: bairro,
+        cidade: cidade,
+      });
       if (instrutor != null && usuario != null) {
         const updateData = {
           nome,
@@ -172,14 +297,37 @@ const Page = () => {
         await updateInstrutor(cpfAtual, updateData);
         setIsJanelaEditarInstrutor(!isJanelaEditarInstrutor)
         limpaCampos()
+        setErrors({});
       }
     } catch (error) {
-      console.error('Erro ao atualizar instrutor:', error);
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   };
 
-  const registraInstrutor = async () => {
+  const registraInstrutor = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      // Validação dos dados com o Zod
+      formSchemaInstrutor.parse({
+        name: nome,
+        dataNascimento: `${dia}/${mes}/${ano}`,
+        cpf: cpf,
+        telefone: telefone,
+        rua: rua,
+        numeroRua: numeroRua,
+        numeroCasa: numeroCasa,
+        cep: cep,
+        bairro: bairro,
+        cidade: cidade,
+        // Ajuste conforme necessário
+      });
       // Subtrai 1 do mês por causa do índice. Ex: mes[0] = janeiro, mes[1] = fevereiro [...]
       const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia))
       if (usuario != null) {
@@ -201,16 +349,33 @@ const Page = () => {
             usuario: usuario.id
           }
         );
+        setErrors({});
         limpaCampos()
         setIsJanelaCadastro(!isJanelaCadastro)
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   }
 
-  const registraUsuario = async () => {
+  const registraUsuario = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      // Validação dos dados com o Zod
+      formSchemaCreateUsuario.parse({
+        nome: nome,
+        login: login,
+        senha: senha,
+        nivelDeAcesso: nivelDeAcesso
+        // Ajuste conforme necessário
+      });
       if (usuario != null) {
         await callCreateUsuario(
           {
@@ -228,7 +393,14 @@ const Page = () => {
         setIsJanelaCadastroUsuario(!isJanelaCadastroUsuario)
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   }
 
@@ -288,11 +460,11 @@ const Page = () => {
           </div>
         </div>
 
-        <div className=" bg-no-repeat bg-cover  " style={{ backgroundImage: "url('fundo.png')" }}>
-          <div className="flex flex justify-end gap-4">
+        <div className="bg-no-repeat bg-cover" style={{ backgroundImage: "url('fundo.png')" }}>
+          <div className="flex justify-end gap-4">
             <button
               onClick={abreFechaJanelaCadastro}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ml-8">
               Registrar novo funcionario
             </button>
             <button
@@ -303,7 +475,7 @@ const Page = () => {
             <button
               onClick={abreFechaJanelaPesquisarinstrutorParaEditar}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              Editar registro
+              Editar registro de instrutor
             </button>
             <button
               onClick={abreFechaJanelaPesquisarinstrutor}
@@ -312,7 +484,7 @@ const Page = () => {
             </button>
             <button
               onClick={abreFechaJanelaPesquisarinstrutor}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[55px]">
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[40px]">
               Excluir funcionario
             </button>
           </div>
@@ -361,17 +533,19 @@ const Page = () => {
             {/* Janela de Cadastro */}
             {isJanelaCadastro && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
-                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[630px] border-4 border-[#ececec] p-6">
+                  <div className="absolute top-[45px] left-1/2 transform -translate-x-1/2 bg-white rounded-lg border-4 border-[#9f968a] px-4 py-1 z-10">
                     <label
                       htmlFor="first_name"
-                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      className="text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]">
                       Cadastro de instrutor:
                     </label>
+                  </div>
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
                     <div className="w-full  mx-auto">
                       <div className="mb-6">
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Nome:
                             </label>
@@ -380,139 +554,150 @@ const Page = () => {
                               id="first_name"
                               value={nome}
                               onChange={(e) => setNome(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
+                            {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              CPF:
+                              CPF - 999.999.999-99:
                             </label>
                             <input
                               type="text"
                               id="last_name"
                               value={cpf}
                               onChange={(e) => setCpf(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
+                            {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Data de nascimento: dd/mm/yyyy</label>
+                              Data de nascimento: dd/mm/aaaa</label>
                             <input
                               type="text"
                               id="dia"
                               value={dia}
                               onChange={(e) => setDia(e.target.value)}
-                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                              className="w-[100px] rounded-lg text-black border py-1 px-[8px] mr-2"
                             />
                             <input
                               type="text"
                               id="mes"
                               value={mes}
                               onChange={(e) => setMes(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
                             />
                             <input
                               type="text"
                               id="ano"
                               value={ano}
                               onChange={(e) => setAno(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
                             />
+                            {errors.dataNascimento && <p style={{ color: "red" }}>{errors.dataNascimento}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Rua:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="rua"
                               value={rua}
                               onChange={(e) => setRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.rua && <p style={{ color: "red" }}>{errors.rua}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Telefone:</label>
+                              Telefone - (99)99999-9999:</label>
                             <input
                               type="text"
-                              id="first_name"
+                              id="telefone"
                               value={telefone}
                               onChange={(e) => setTelefone(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3" />
+                              className="w-80 rounded-lg text-black border py-1 px-3" />
+                            {errors.telefone && <p style={{ color: "red" }}>{errors.telefone}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Bairro:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="bairro"
                               value={bairro}
                               onChange={(e) => setBairro(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.bairro && <p style={{ color: "red" }}>{errors.bairro}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              CEP:</label>
+                              CEP - 99999-999:</label>
                             <input
                               type="text"
-                              id="first_name"
+                              id="cep"
                               value={cep}
                               onChange={(e) => setCep(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
+                            {errors.cep && <p style={{ color: "red" }}>{errors.cep}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Cidade:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="cidade"
                               value={cidade}
                               onChange={(e) => setCidade(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.cidade && <p style={{ color: "red" }}>{errors.cidade}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Numero da Rua:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="numeroRua"
                               value={numeroRua}
                               onChange={(e) => setNumeroRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.numeroRua && <p style={{ color: "red" }}>{errors.numeroRua}</p>}
+
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Numero da Casa:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="numeroCasa"
                               value={numeroCasa}
                               onChange={(e) => setNumeroCasa(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.numeroCasa && <p style={{ color: "red" }}>{errors.numeroCasa}</p>}
                           </div>
                         </div>
                       </div>
-                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+                      <div className="mt-15 flex justify-end gap-4 ml-[800px]">
                         <button
                           onClick={abreFechaJanelaCadastro}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-4 py-1 rounded-lg hover:bg-teal-700">
                           Cancelar
                         </button>
                         <button
                           onClick={registraInstrutor}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-8 py-1 rounded-lg hover:bg-teal-700">
                           Salvar
                         </button>
                       </div>
@@ -536,10 +721,12 @@ const Page = () => {
                       <input
                         type="text"
                         id="first_name"
+                        placeholder="999.999.999-99"
                         value={buscaCpf}
                         onChange={(e) => setBuscaCpf(e.target.value)}
                         className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
                       />
+                      {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                       <div className="flex mt-10 gap-4">
                         <button
                           onClick={handlePesquisar}
@@ -742,10 +929,12 @@ const Page = () => {
                       <input
                         type="text"
                         id="first_name"
+                        placeholder="999.999.999-99"
                         value={buscaCpf}
                         onChange={(e) => setBuscaCpf(e.target.value)}
                         className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
                       />
+                      {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                       <div className="flex mt-10 gap-4">
                         <button
                           onClick={handlePesquisarParaEditar}
@@ -766,17 +955,19 @@ const Page = () => {
 
             {isJanelaEditarInstrutor && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
-                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[630px] border-4 border-[#ececec] p-6">
+                  <div className="absolute top-[45px] left-1/2 transform -translate-x-1/2 bg-white rounded-lg border-4 border-[#9f968a] px-4 py-1 z-10">
                     <label
                       htmlFor="first_name"
-                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
-                      Edição de instrutor:
+                      className="text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]">
+                      Editar Aluno:
                     </label>
+                  </div>
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
                     <div className="w-full  mx-auto">
-                      <div className="mb-6">
+                      <div>
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Nome:
                             </label>
@@ -785,139 +976,150 @@ const Page = () => {
                               id="first_name"
                               value={nome}
                               onChange={(e) => setNome(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
+                            {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              CPF:
+                              CPF - 999.999.999-99:
                             </label>
                             <input
                               type="text"
                               id="last_name"
                               value={cpf}
                               onChange={(e) => setCpf(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
+                            {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Data de nascimento: dd/mm/yyyy</label>
+                              Data de nascimento: dd/mm/aaaa</label>
                             <input
                               type="text"
                               id="dia"
                               value={dia}
                               onChange={(e) => setDia(e.target.value)}
-                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                              className="w-[100px] rounded-lg text-black border py-1 px-[8px] mr-2"
                             />
                             <input
                               type="text"
                               id="mes"
                               value={mes}
                               onChange={(e) => setMes(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
                             />
                             <input
                               type="text"
                               id="ano"
                               value={ano}
                               onChange={(e) => setAno(e.target.value)}
-                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                              className=" w-[100px] rounded-lg text-black border py-1 mr-2 px-[8px]"
                             />
+                            {errors.dataNascimento && <p style={{ color: "red" }}>{errors.dataNascimento}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Rua:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="rua"
                               value={rua}
                               onChange={(e) => setRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.rua && <p style={{ color: "red" }}>{errors.rua}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Telefone:</label>
+                              Telefone - (99)99999-9999:</label>
                             <input
                               type="text"
-                              id="first_name"
+                              id="telefone"
                               value={telefone}
                               onChange={(e) => setTelefone(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3" />
+                              className="w-80 rounded-lg text-black border py-1 px-3" />
+                            {errors.telefone && <p style={{ color: "red" }}>{errors.telefone}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Bairro:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="bairro"
                               value={bairro}
                               onChange={(e) => setBairro(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.bairro && <p style={{ color: "red" }}>{errors.bairro}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-h-[90px]">
                             <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              CEP:</label>
+                              CEP - 99999-999:</label>
                             <input
                               type="text"
-                              id="first_name"
+                              id="cep"
                               value={cep}
                               onChange={(e) => setCep(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3"
+                              className="w-80 rounded-lg text-black border py-1 px-3"
                             />
+                            {errors.cep && <p style={{ color: "red" }}>{errors.cep}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Cidade:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="cidade"
                               value={cidade}
                               onChange={(e) => setCidade(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.cidade && <p style={{ color: "red" }}>{errors.cidade}</p>}
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Numero da Rua:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="numeroRua"
                               value={numeroRua}
                               onChange={(e) => setNumeroRua(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.numeroRua && <p style={{ color: "red" }}>{errors.numeroRua}</p>}
+
                           </div>
-                          <div>
+                          <div className="min-h-[90px]">
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Numero da Casa:</label>
                             <input
                               type="text"
-                              id="last_name"
+                              id="numeroCasa"
                               value={numeroCasa}
                               onChange={(e) => setNumeroCasa(e.target.value)}
-                              className="w-80 rounded-lg text-black border py-2 px-3 "
+                              className="w-80 rounded-lg text-black border py-1 px-3 "
                             />
+                            {errors.numeroCasa && <p style={{ color: "red" }}>{errors.numeroCasa}</p>}
                           </div>
                         </div>
                       </div>
-                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+                      <div className=" flex justify-end gap-4 ml-[600px]">
                         <button
                           onClick={abreFechaJanelaEditarinstrutor}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-4 py-2 rounded-lg hover:bg-teal-700">
                           Cancelar
                         </button>
                         <button
                           onClick={handleUpdate}
-                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]  px-8 py-2 rounded-lg hover:bg-teal-700">
                           Salvar
                         </button>
                       </div>
@@ -926,7 +1128,6 @@ const Page = () => {
                 </div>
               </div>
             )}
-
 
             {isJanelaCadastroUsuario && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
@@ -945,12 +1146,14 @@ const Page = () => {
                               Login:
                             </label>
                             <input
-                              type="text"
+                              type="email"
                               id="first_name"
+                              placeholder="Email"
                               value={login}
                               onChange={(e) => setLogin(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3"
                             />
+                            {errors.login && <p style={{ color: "red" }}>{errors.login}</p>}
                           </div>
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
@@ -963,6 +1166,7 @@ const Page = () => {
                               onChange={(e) => setSenha(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3 "
                             />
+                            {errors.senha && <p style={{ color: "red" }}>{errors.senha}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
@@ -975,6 +1179,7 @@ const Page = () => {
                               value={nome}
                               onChange={(e) => setNome(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3" />
+                            {errors.nome && <p style={{ color: "red" }}>{errors.nome}</p>}
                           </div>
                           <div>
                             <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
@@ -986,6 +1191,7 @@ const Page = () => {
                               onChange={(e) => setNivelDeAcesso(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3 "
                             />
+                            {errors.nivelDeAcesso && <p style={{ color: "red" }}>{errors.nivelDeAcesso}</p>}
                           </div>
                         </div>
                       </div>
