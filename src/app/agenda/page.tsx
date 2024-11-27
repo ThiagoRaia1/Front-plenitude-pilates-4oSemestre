@@ -7,24 +7,58 @@ import { getInstrutor, IInstrutor } from "../equipe/api";
 import { getAluno, IAluno } from "../alunos/api";
 import { z } from "zod";
 
-const formSchema = z.object({
-  // Verifica se a data digita é válida e se está no formato 99/99/9999
-  // dataAula: z.string()
-  //   .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
-  //     { message: "Data inválida" }
-  //   )
-  //   .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+const formSchemaCpf = z.object({
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+});
 
-  // // Verifica se o horário é valido
-  // horario: z.string()
-  // //.regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)
-  // ,
+const formSchemaAula = z.object({
+  // Verifica se a data digita é válida e se está no formato 99/99/9999
+  dataAula: z.string()
+    .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+      { message: "Data inválida" }
+    )
+    .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+
+  // Verifica se o horário é valido
+  horario: z.string()
+    .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, { message: "Horário inválido", }),
 
   cpf: z.string()
     // Verifica se esta no formato XXX.XXX.XXX-XX
     .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
     // Verifica o tamanho
     .length(14, { message: "CPF deve ter 14 dígitos" }),
+});
+
+const opcoes = ['Aula Normal', 'Aula Experimental'];
+
+const formSchemaAlunoAula = z.object({
+  // Verifica se a data digita é válida e se está no formato 99/99/9999
+  dataAula: z.string()
+    .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+      { message: "Data inválida" }
+    )
+    .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+
+  // Verifica se o horário é valido
+  horario: z.string()
+    .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, { message: "Horário inválido", }),
+
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+
+  // Valida se o tipo de aula foi escolhido
+  tipoDeAula: z.string()
+    .refine((value) => opcoes.includes(value), {
+      message: `Selecione o tipo de aula`,
+    }),
 });
 
 const Page = () => {
@@ -38,7 +72,6 @@ const Page = () => {
   const [mes, setMes] = useState('')
   const [ano, setAno] = useState('')
   const [tipoDeAula, setTipoDeAula] = useState('')
-  const opcoes = ['Aula Normal', 'Aula Experimental'];
   const [instrutorCpf, setInstrutorCpf] = useState('')
   const [dadosInstrutor, setDadosInstrutor] = useState<IInstrutor | null>(null)
   const [aluno, setAluno] = useState<IAluno | null>(null)
@@ -53,24 +86,33 @@ const Page = () => {
     parseInt(dia)
   );
 
-  const registraAula = async () => {
-    const horaComeco = new Date(
-      parseInt(ano),
-      parseInt(mes) - 1,
-      parseInt(dia),
-      parseInt(hora),
-      parseInt(minuto)
-    )
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-    const horaFim = new Date(
-      parseInt(ano),
-      parseInt(mes) - 1,
-      parseInt(dia),
-      parseInt(hora) + 1,
-      parseInt(minuto)
-    )
-
+  const registraAula = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      // Validação dos dados com o Zod
+      formSchemaAula.parse({
+        dataAula: `${dia}/${mes}/${ano}`,
+        horario: horario,
+        cpf: instrutorCpf,
+      });
+      setErrors({})
+      const horaComeco = new Date(
+        parseInt(ano),
+        parseInt(mes) - 1,
+        parseInt(dia),
+        parseInt(hora),
+        parseInt(minuto)
+      )
+
+      const horaFim = new Date(
+        parseInt(ano),
+        parseInt(mes) - 1,
+        parseInt(dia),
+        parseInt(hora) + 1,
+        parseInt(minuto)
+      )
       if (usuario != null) {
         setDadosInstrutor(await getInstrutor(instrutorCpf))
         if (dadosInstrutor != null) {
@@ -90,16 +132,28 @@ const Page = () => {
         }
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   }
-  const [erro, setErro] = useState('');
 
-  const registraAlunoAula = async () => {
-    if (!tipoDeAula) {
-      setErro('Você deve selecionar o tipo de aula.');
-    } else {
-      setErro(''); // Limpa o erro se a validação passar
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      // Validação dos dados com o Zod
+      formSchemaAlunoAula.parse({
+        dataAula: `${dia}/${mes}/${ano}`,
+        horario: horario,
+        cpf: cpf,
+        tipoDeAula: tipoDeAula,
+      });
+      setErrors({})
       const horaComeco = new Date(
         parseInt(ano),
         parseInt(mes) - 1,
@@ -107,34 +161,17 @@ const Page = () => {
         parseInt(hora),
         parseInt(minuto)
       );
-
-      try {
-        if (usuario != null) {
-          setAula(await getAula(horaComeco))
-          if (aula != null && aluno != null) {
-            await callCreateAlunoAula({
-              aluno,
-              aula,
-              tipoDeAula
-            })
-            setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
-          }
+      if (usuario != null) {
+        setAula(await getAula(horaComeco))
+        if (aula != null && aluno != null) {
+          await callCreateAlunoAula({
+            aluno,
+            aula,
+            tipoDeAula
+          })
+          setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
         }
-      } catch (error) {
-        console.error(error)
       }
-    }
-  }
-
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    try {
-      // Validação dos dados com o Zod
-      formSchema.parse({
-        dataAula: `${dia}/${mes}/${ano}`,
-        cpf: cpf,
-      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
@@ -149,7 +186,7 @@ const Page = () => {
 
   const handlePesquisar = async (event: React.FormEvent) => {
     try {
-      formSchema.parse({
+      formSchemaCpf.parse({
         cpf: cpf,
       });
       setAluno(await getAluno(cpf))
@@ -157,6 +194,7 @@ const Page = () => {
         setIsBuscar(!isBuscar); // Fecha a janela de busca de aluno por cpf
         setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
         // Exibe os dados na janela
+        setErrors({});
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -179,17 +217,21 @@ const Page = () => {
   };
 
   const cadFunc = () => {
+    setErrors({})
     setIsModalOpen(!isModalOpen);
   }
   const buscar = () => {
+    setErrors({})
     setIsBuscar(!isBuscar);
   }
 
   const abreFechaJanelaPesquisarAluno = () => {
+    setErrors({});
     setIsBuscar(!isBuscar);
   }
 
   const abreFechaJanelaRegistrarAlunoAula = () => {
+    setErrors({});
     setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula);
   }
 
@@ -265,8 +307,8 @@ const Page = () => {
           <div className="mt-8" >
             <Calendar onDateChange={handleDateChange} />
           </div>
-          <div >
-
+          
+          <div>
             {isModalOpen && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
                 <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
@@ -276,7 +318,7 @@ const Page = () => {
                       className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
                       Cadastro de aula:
                     </label>
-                    <div className="w-full  mx-auto my-16">
+                    <div className="w-full  mx-auto mt-8">
                       <div className="mb-6">
                         <div className="grid grid-cols-2 gap-4">
                         </div>
@@ -290,6 +332,7 @@ const Page = () => {
                             <input
                               type="text"
                               id="dia"
+                              placeholder="dd"
                               value={dia}
                               onChange={(e) => setDia(e.target.value)}
                               className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
@@ -297,6 +340,7 @@ const Page = () => {
                             <input
                               type="text"
                               id="mes"
+                              placeholder="mm"
                               value={mes}
                               onChange={(e) => setMes(e.target.value)}
                               className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px] "
@@ -304,10 +348,12 @@ const Page = () => {
                             <input
                               type="text"
                               id="ano"
+                              placeholder="aaaa"
                               value={ano}
                               onChange={(e) => setAno(e.target.value)}
                               className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
                             />
+                            {errors.dataAula && <p style={{ color: "red" }}>{errors.dataAula}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
@@ -327,6 +373,7 @@ const Page = () => {
                               onChange={(e) => setHorario(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3"
                             />
+                            {errors.horario && <p style={{ color: "red" }}>{errors.horario}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
@@ -334,14 +381,16 @@ const Page = () => {
                             <label
                               htmlFor="first_name"
                               className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Instrutor:
+                              Instrutor (CPF):
                             </label>
                             <input
                               type="text"
                               id="first_name"
+                              placeholder="999.999.999-99"
                               value={instrutorCpf}
                               onChange={(e) => setInstrutorCpf(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3" />
+                            {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                           </div>
                         </div>
                       </div>
@@ -419,7 +468,7 @@ const Page = () => {
                             <label
                               htmlFor="first_name"
                               className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Data da aula: dd/mm/yyyy
+                              Data da aula: dd/mm/aaaa
                             </label>
                             <input
                               type="text"
@@ -442,6 +491,7 @@ const Page = () => {
                               onChange={(e) => setAno(e.target.value)}
                               className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
                             />
+                            {errors.dataAula && <p style={{ color: "red" }}>{errors.dataAula}</p>}
                           </div>
                           <div>
                             <label
@@ -461,7 +511,7 @@ const Page = () => {
                                 </option>
                               ))}
                             </select>
-
+                            {errors.tipoDeAula && <p style={{ color: "red" }}>{errors.tipoDeAula}</p>}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
@@ -474,19 +524,14 @@ const Page = () => {
                             <input
                               id="time-input"
                               type="time"
-                              placeholder="00:00"
                               min="08:00"
                               max="18:00"
                               value={horario}
                               onChange={(e) => setHorario(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3"
                             />
+                            {errors.horario && <p style={{ color: "red" }}>{errors.horario}</p>}
                           </div>
-                          {erro && (
-                            <p className="mt-2 text-red-600 font-bold">
-                              {erro}
-                            </p>
-                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
                           <div>
@@ -511,7 +556,7 @@ const Page = () => {
                           Cancelar
                         </button>
                         <button
-                          onClick={registraAlunoAula}
+                          onClick={handleSubmit}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-10 py-2 rounded-lg hover:bg-teal-700 mr-8">
                           Salvar
                         </button>
@@ -521,7 +566,6 @@ const Page = () => {
                 </div>
               </div>
             )}
-
           </div>
         </div>
       </div>
