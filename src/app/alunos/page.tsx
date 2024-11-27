@@ -4,6 +4,14 @@ import { callCreate, getAluno, getTodos, IAluno, ICreateAluno, updateAluno } fro
 import { useAuth } from "@/context/auth";
 import { z } from 'zod';
 
+const formSchemaCpf = z.object({
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+});
+
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome não pode ser maior que 50 caracteres"),
 
@@ -132,8 +140,12 @@ const Page = () => {
     setIsJanelaEditarAluno(!isJanelaEditarAluno);
   }
 
-  const handlePesquisar = async () => {
+  const handlePesquisar = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      formSchemaCpf.parse({
+        cpf: buscaCpf,
+      });
       setAluno(await getAluno(buscaCpf))
       if (aluno != null) {
         setIsBuscarPesquisa(!isBuscarPesquisa); // Fecha a janela de busca de aluno por cpf
@@ -154,12 +166,23 @@ const Page = () => {
         setNumeroCasa(aluno.numeroCasa.toString())
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   };
 
-  const handlePesquisarParaEditar = async () => {
+  const handlePesquisarParaEditar = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      formSchemaCpf.parse({
+        cpf: buscaCpf,
+      });
       limpaCampos()
       setAluno(await getAluno(buscaCpf))
       if (aluno != null) {
@@ -182,7 +205,14 @@ const Page = () => {
         setNumeroCasa(aluno.numeroCasa.toString())
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   };
 
@@ -584,10 +614,12 @@ const Page = () => {
                       <input
                         type="text"
                         id="first_name"
+                        placeholder="999.999.999-99"
                         value={buscaCpf}
                         onChange={(e) => setBuscaCpf(e.target.value)}
                         className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
                       />
+                      {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                       <div className="flex mt-10 gap-4">
                         <button
                           onClick={handlePesquisar}
@@ -790,10 +822,12 @@ const Page = () => {
                       <input
                         type="text"
                         id="first_name"
+                        placeholder="999.999.999-99"
                         value={buscaCpf}
                         onChange={(e) => setBuscaCpf(e.target.value)}
                         className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
                       />
+                      {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                       <div className="flex mt-10 gap-4">
                         <button
                           onClick={handlePesquisarParaEditar}
