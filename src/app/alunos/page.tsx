@@ -503,24 +503,27 @@ const Page = () => {
                 </tr>
               </thead>
               <tbody>
-                {todos.map((todo) => (
-                  <tr className="text-black text-center align-middle"
-                    key={todo.id}>
-                    <td>{todo.id}</td>
-                    <td>{todo.nome}</td>
-                    <td>{formataDataBr(new Date(todo.dataNascimento))}</td>
-                    <td>{todo.cpf}</td>
-                    <td>{todo.status}</td>
-                    <td>{todo.ultimaAlteracao}</td>
-                    <td>{formataDataBr(new Date(todo.dataUltimaAlteracao))}</td>
-                    {/* <td>{todo.numeroRua}</td>
-                    <td>{todo.numeroCasa}</td> */}
-                    <td>{todo.cep}</td>
-                    <td>{todo.bairro}</td>
-                    <td>{todo.cidade}</td>
-                  </tr>
-                ))}
+                {todos
+                  .filter((todo) => todo.status !== "X")
+                  .map((todo) => (
+                    <tr
+                      className="text-black text-center align-middle"
+                      key={todo.id}
+                    >
+                      <td>{todo.id}</td>
+                      <td>{todo.nome}</td>
+                      <td>{formataDataBr(new Date(todo.dataNascimento))}</td>
+                      <td>{todo.cpf}</td>
+                      <td>{todo.status}</td>
+                      <td>{todo.ultimaAlteracao}</td>
+                      <td>{formataDataBr(new Date(todo.dataUltimaAlteracao))}</td>
+                      <td>{todo.cep}</td>
+                      <td>{todo.bairro}</td>
+                      <td>{todo.cidade}</td>
+                    </tr>
+                  ))}
               </tbody>
+
             </table>
 
             {/* Janela de Cadastro */}
