@@ -88,7 +88,6 @@ const Page = () => {
   const [numeroRua, setNumeroRua] = useState('')
   const [numeroCasa, setNumeroCasa] = useState('')
 
-  const [aluno, setAluno] = useState<ICreateAluno | null>(null); // Inicialmente vazio
   const [buscaCpf, setBuscaCpf] = useState('')
   const [cpfAtual, setCpfAtual] = useState('')
 
@@ -115,7 +114,7 @@ const Page = () => {
     setCidade('')
     setNumeroRua('')
     setNumeroCasa('')
-    setAluno(null)
+    setBuscaCpf('')
   }
 
   const abreFechaJanelaCadastro = () => {
@@ -129,11 +128,13 @@ const Page = () => {
   }
 
   const abreFechaJanelaPesquisarAluno = () => {
+    setBuscaCpf('')
     setErrors({});
     setIsBuscarPesquisa(!isBuscarPesquisa);
   }
 
   const abreFechaJanelaPesquisarAlunoParaEditar = () => {
+    setBuscaCpf('')
     setErrors({});
     setIsBuscarEditar(!isBuscarEditar);
   }
@@ -167,7 +168,7 @@ const Page = () => {
         setNumeroRua(aluno.numeroRua.toString())
         setNumeroCasa(aluno.numeroCasa.toString())
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
         const newErrors: { [key: string]: string } = {};
@@ -175,6 +176,9 @@ const Page = () => {
           newErrors[err.path[0]] = err.message;
         });
         setErrors(newErrors); // Atualiza o estado de erros
+      }
+      if (error.message === "Not Found") {
+        alert("CPF não registrado")
       }
     }
   };
@@ -186,8 +190,8 @@ const Page = () => {
         cpf: buscaCpf,
       });
       limpaCampos()
-      const aluno: IAluno = await getAluno(buscaCpf)
-      if (aluno != null) {
+      try {
+        const aluno: IAluno = await getAluno(buscaCpf)
         setCpfAtual(aluno.cpf)
         setIsBuscarEditar(!isBuscarEditar); // Fecha a janela de busca de aluno por cpf
         setIsJanelaEditarAluno(!isJanelaEditarAluno); // Abre a janela de edicao de aluno para exibir os dados
@@ -205,6 +209,8 @@ const Page = () => {
         setCidade(aluno.cidade)
         setNumeroRua(aluno.numeroRua.toString())
         setNumeroCasa(aluno.numeroCasa.toString())
+      } catch (error) {
+        alert("CPF nao registrado.")
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -233,8 +239,8 @@ const Page = () => {
         bairro: bairro,
         cidade: cidade,
       });
-
-      if (aluno != null && usuario != null) {
+      const aluno = await getAluno(cpfAtual)
+      if (usuario != null) {
         const updateData = {
           nome,
           dataNascimento: new Date(aluno.dataNascimento),
@@ -253,6 +259,7 @@ const Page = () => {
         setIsJanelaEditarAluno(!isJanelaEditarAluno)
         limpaCampos()
       }
+
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
@@ -283,10 +290,10 @@ const Page = () => {
         cidade: cidade,
         // Ajuste conforme necessário
       });
-      const aluno: IAluno = await getAluno(cpf)
-      if (aluno != null) {
+      try {
+        const aluno: IAluno = await getAluno(cpf)
         alert("CPF ja cadastrado.")
-      } else {
+      } catch (error: any) {
         // Se passar pela validação, a execução segue
         const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
         if (usuario != null) {
@@ -306,17 +313,12 @@ const Page = () => {
             cidade,
             usuario: usuario.id,
           });
-
           // Limpa os campos e fecha o modal
           limpaCampos();
           setErrors({});
           setIsJanelaCadastro(!isJanelaCadastro);
         }
       }
-
-
-
-
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
