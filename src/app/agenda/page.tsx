@@ -5,6 +5,27 @@ import Calendar from "../calendar/page";
 import { useAuth } from "@/context/auth";
 import { getInstrutor, IInstrutor } from "../equipe/api";
 import { getAluno, IAluno } from "../alunos/api";
+import { z } from "zod";
+
+const formSchema = z.object({
+  // Verifica se a data digita é válida e se está no formato 99/99/9999
+  // dataAula: z.string()
+  //   .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+  //     { message: "Data inválida" }
+  //   )
+  //   .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+
+  // // Verifica se o horário é valido
+  // horario: z.string()
+  // //.regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)
+  // ,
+
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+});
 
 const Page = () => {
   const { usuario, isAuthenticated, logout } = useAuth();
@@ -105,8 +126,32 @@ const Page = () => {
     }
   }
 
-  const handlePesquisar = async () => {
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
+      // Validação dos dados com o Zod
+      formSchema.parse({
+        dataAula: `${dia}/${mes}/${ano}`,
+        cpf: cpf,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
+    }
+  }
+
+  const handlePesquisar = async (event: React.FormEvent) => {
+    try {
+      formSchema.parse({
+        cpf: cpf,
+      });
       setAluno(await getAluno(cpf))
       if (aluno != null) {
         setIsBuscar(!isBuscar); // Fecha a janela de busca de aluno por cpf
@@ -114,7 +159,14 @@ const Page = () => {
         // Exibe os dados na janela
       }
     } catch (error) {
-      console.error(error)
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
     }
   };
 
@@ -325,10 +377,12 @@ const Page = () => {
                       <input
                         type="text"
                         id="first_name"
+                        placeholder="999.999.999-99"
                         value={cpf}
                         onChange={(e) => setCpf(e.target.value)}
                         className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
                       />
+                      {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                       <div className="flex mt-10 gap-4">
                         <button
                           onClick={handlePesquisar}
@@ -407,7 +461,7 @@ const Page = () => {
                                 </option>
                               ))}
                             </select>
-                            
+
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
@@ -429,10 +483,10 @@ const Page = () => {
                             />
                           </div>
                           {erro && (
-                              <p className="mt-2 text-red-600 font-bold">
-                                {erro}
-                              </p>
-                            )}
+                            <p className="mt-2 text-red-600 font-bold">
+                              {erro}
+                            </p>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-40 mt-4">
                           <div>

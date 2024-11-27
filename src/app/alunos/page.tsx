@@ -47,7 +47,7 @@ const formSchema = z.object({
     .min(1, { message: "Número da casa é obrigatório" }),
 });
 
-function formataDataBr(data: Date) {
+export function formataDataBr(data: Date) {
   const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
   const mes = (data.getUTCMonth() + 1).toString().padStart(2, '0'); // Ajusta o mês (adiciona 1)
   const ano = data.getUTCFullYear().toString();
@@ -211,37 +211,6 @@ const Page = () => {
       console.error('Erro ao atualizar aluno:', error);
     }
   };
-
-  const registraAluno = async () => {
-    try {
-      // Subtrai 1 do mês por causa do índice. Ex: mes[0] = janeiro, mes[1] = fevereiro [...]
-      const dataNascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia))
-      if (usuario != null) {
-        await callCreate(
-          {
-            nome,
-            dataNascimento,
-            cpf,
-            telefone,
-            status: "Ativo",
-            ultimaAlteracao: usuario.login, // usuario logado
-            dataUltimaAlteracao: new Date(),
-            rua,
-            numeroRua,
-            numeroCasa,
-            cep,
-            bairro,
-            cidade,
-            usuario: usuario.id
-          }
-        );
-        limpaCampos()
-        setIsJanelaCadastro(!isJanelaCadastro)
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const handleSubmit = async (event: React.FormEvent) => {
