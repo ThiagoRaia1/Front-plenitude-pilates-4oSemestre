@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react";
-import { callCreateAlunoAula, callCreateAula, getAula, IAula } from "./api";
+import { callCreateAlunoAula, callCreateAula, getAula, IAula, IUpdateAula, updateAula } from "./api";
 import Calendar from "../calendar/page";
 import { useAuth } from "@/context/auth";
 import { getInstrutor, IInstrutor } from "../equipe/api";
@@ -21,7 +21,7 @@ const formSchemaAula = z.object({
     .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
       { message: "Data inválida" }
     )
-    .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+    .length(10, { message: "A data deve estar no formato dd/mm/aaaa" }),
 
   // Verifica se o horário é valido
   horario: z.string()
@@ -90,6 +90,8 @@ const Page = () => {
 
   const registraAula = async (event: React.FormEvent) => {
     event.preventDefault();
+    let horaComeco = new Date()
+    let horaFim = new Date()
     try {
       // Validação dos dados com o Zod
       formSchemaAula.parse({
@@ -97,41 +99,53 @@ const Page = () => {
         horario: horario,
         cpf: instrutorCpf,
       });
-      setErrors({})
-      const horaComeco = new Date(
-        parseInt(ano),
-        parseInt(mes) - 1,
-        parseInt(dia),
-        parseInt(hora),
-        parseInt(minuto)
-      )
+      try {
+        setErrors({})
+        horaComeco = new Date(
+          parseInt(ano),
+          parseInt(mes) - 1,
+          parseInt(dia),
+          parseInt(hora),
+          parseInt(minuto)
+        )
 
-      const horaFim = new Date(
-        parseInt(ano),
-        parseInt(mes) - 1,
-        parseInt(dia),
-        parseInt(hora) + 1,
-        parseInt(minuto)
-      )
-      if (usuario != null) {
-        setDadosInstrutor(await getInstrutor(instrutorCpf))
-        if (dadosInstrutor != null) {
-          const instrutor = dadosInstrutor.id
-          await callCreateAula(
-            {
-              data, // remover
-              horaComeco,
-              horaFim,
-              qtdeVagas: 5,
-              qtdeVagasDisponiveis: 5,
-              status: "Ativo",
-              instrutor
+        horaFim = new Date(
+          parseInt(ano),
+          parseInt(mes) - 1,
+          parseInt(dia),
+          parseInt(hora) + 1,
+          parseInt(minuto)
+        )
+        const aula = await getAula(horaComeco) // Retorna erro Not Found se a aula ja nao estiver registrada
+        if (aula != null) {
+          throw new Error("Aula ja registrada") // Se a aula ja existir, nao faz um novo cadastro
+        }
+      } catch (error: any) {
+        if (error.message === "Not Found") {
+          if (usuario != null) {
+            setDadosInstrutor(await getInstrutor(instrutorCpf))
+            if (dadosInstrutor != null) {
+              const instrutor = dadosInstrutor.id
+              await callCreateAula(
+                {
+                  data, // remover
+                  horaComeco,
+                  horaFim,
+                  qtdeVagas: 5,
+                  qtdeVagasDisponiveis: 5,
+                  status: "Ativo",
+                  instrutor
+                }
+              );
+              setIsModalOpen(!isModalOpen)
             }
-          );
-          setIsModalOpen(!isModalOpen)
+          }
+        }
+        if (error.message === "Aula ja registrada") {
+          alert("Erro: Aula ja registrada.")
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
         const newErrors: { [key: string]: string } = {};
@@ -140,10 +154,11 @@ const Page = () => {
         });
         setErrors(newErrors); // Atualiza o estado de erros
       }
+      // console.error(error)
     }
   }
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const registraAlunoAula = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
       // Validação dos dados com o Zod
@@ -162,17 +177,27 @@ const Page = () => {
         parseInt(minuto)
       );
       if (usuario != null) {
-        setAula(await getAula(horaComeco))
+        const aula = await getAula(horaComeco)
+        if (aula.qtdeVagasDisponiveis == 0) {
+          throw new Error("Vagas ocupadas")
+        }
         if (aula != null && aluno != null) {
           await callCreateAlunoAula({
             aluno,
             aula,
             tipoDeAula
           })
+          // console.error(aula.qtdeVagasDisponiveis)
+          aula.qtdeVagasDisponiveis -= 1
+          // console.error(aula.qtdeVagasDisponiveis)
+          const updateData: IUpdateAula = {
+            qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis
+          }
+          await updateAula(aula.id, updateData)
           setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
         const newErrors: { [key: string]: string } = {};
@@ -181,10 +206,17 @@ const Page = () => {
         });
         setErrors(newErrors); // Atualiza o estado de erros
       }
+      if (error.message === "Not Found") {
+        alert("Erro: Não há aula registrada para o horário informado.")
+      }
+      if (error.message === "Vagas ocupadas") {
+        alert("Erro: Não há vagas para o horário informado.")
+      }
     }
   }
 
-  const handlePesquisar = async (event: React.FormEvent) => {
+  const handlePesquisarAluno = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
       formSchemaCpf.parse({
         cpf: cpf,
@@ -307,7 +339,7 @@ const Page = () => {
           <div className="mt-8" >
             <Calendar onDateChange={handleDateChange} />
           </div>
-          
+
           <div>
             {isModalOpen && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
@@ -363,16 +395,23 @@ const Page = () => {
                               className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
                               Horário:
                             </label>
-                            <input
-                              id="time-input"
-                              type="time"
-                              placeholder="00:00"
-                              min="08:00"
-                              max="18:00"
+                            <select
                               value={horario}
                               onChange={(e) => setHorario(e.target.value)}
                               className="w-80 rounded-lg text-black border py-2 px-3"
-                            />
+                            >
+                              <option value="08:00">08:00</option>
+                              <option value="09:00">09:00</option>
+                              <option value="10:00">10:00</option>
+                              <option value="11:00">11:00</option>
+                              <option value="12:00">12:00</option>
+                              <option value="13:00">13:00</option>
+                              <option value="14:00">14:00</option>
+                              <option value="15:00">15:00</option>
+                              <option value="16:00">16:00</option>
+                              <option value="17:00">17:00</option>
+                              <option value="18:00">18:00</option>
+                            </select>
                             {errors.horario && <p style={{ color: "red" }}>{errors.horario}</p>}
                           </div>
                         </div>
@@ -434,7 +473,7 @@ const Page = () => {
                       {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
                       <div className="flex mt-10 gap-4">
                         <button
-                          onClick={handlePesquisar}
+                          onClick={handlePesquisarAluno}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700">
                           Pesquisar
                         </button>
@@ -556,7 +595,7 @@ const Page = () => {
                           Cancelar
                         </button>
                         <button
-                          onClick={handleSubmit}
+                          onClick={registraAlunoAula}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-10 py-2 rounded-lg hover:bg-teal-700 mr-8">
                           Salvar
                         </button>

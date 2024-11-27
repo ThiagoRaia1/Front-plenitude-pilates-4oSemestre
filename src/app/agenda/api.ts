@@ -10,23 +10,6 @@ export interface ICreateAula {
   instrutor: number
 }
 
-export interface IAula {
-  id: number
-  data: Date
-  horaComeco: Date
-  horaFim: Date
-  qtdeVagas: number
-  qtdeVagasDisponiveis: number
-  status: string
-  instrutor: number
-}
-
-export interface ICreateAlunoAula {
-  aluno: IAluno
-  aula: IAula
-  tipoDeAula: string
-}
-
 export const callCreateAula = async (data: ICreateAula): Promise<ICreateAula> => {
   const response = await fetch('http://localhost:3001/aula', {
     method: 'POST',
@@ -41,6 +24,12 @@ export const callCreateAula = async (data: ICreateAula): Promise<ICreateAula> =>
   }
 
   return await response.json()
+}
+
+export interface ICreateAlunoAula {
+  aluno: IAluno
+  aula: IAula
+  tipoDeAula: string
 }
 
 export const callCreateAlunoAula = async (data: ICreateAlunoAula): Promise<ICreateAlunoAula> => {
@@ -59,6 +48,17 @@ export const callCreateAlunoAula = async (data: ICreateAlunoAula): Promise<ICrea
   return await response.json()
 }
 
+export interface IAula {
+  id: number
+  data: Date
+  horaComeco: Date
+  horaFim: Date
+  qtdeVagas: number
+  qtdeVagasDisponiveis: number
+  status: string
+  instrutor: number
+}
+
 export const getAula = async (horaComeco: Date): Promise<any> => {
   // Faz a requisição ao servidor
   try {
@@ -70,13 +70,38 @@ export const getAula = async (horaComeco: Date): Promise<any> => {
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao buscar aula: ${response.statusText}`);
+      throw new Error(response.statusText);
     }
 
     // Retorna os dados do aula
     return await response.json();
   } catch (error) {
-    console.error('Erro ao buscar aula:', error);
     throw error;
+  }
+};
+
+export interface IUpdateAula {
+  qtdeVagasDisponiveis: number
+}
+
+export const updateAula = async (id: number, data: IUpdateAula) => {
+  try {
+    const response = await fetch(`http://localhost:3001/aula/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result; // Resultado da API
+  } catch (error) {
+    console.error('Erro ao atualizar aula:', error);
+    throw error; // Repassa o erro para ser tratado onde a função for chamada
   }
 };
