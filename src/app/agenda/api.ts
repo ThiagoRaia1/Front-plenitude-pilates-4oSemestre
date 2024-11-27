@@ -57,7 +57,43 @@ export interface IAula {
   qtdeVagasDisponiveis: number
   status: string
   instrutor: number
+  alunos: IAluno[]
 }
+
+export const getAulas = async (): Promise<IAula[]> => {
+  const response = await fetch('http://localhost:3001/aula')
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+  return await response.json()
+}
+
+export interface IAlunoAula {
+  id: number
+  aluno: number
+  instrutor: number
+}
+
+export const getAlunoAulas = async (id: number): Promise<IAlunoAula[]> => {
+  // Faz a requisição ao servidor
+  try {
+    const response = await fetch(`http://localhost:3001/alunoaula/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+
+    // Retorna os dados do aula
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+};
 
 export const getAula = async (horaComeco: Date): Promise<any> => {
   // Faz a requisição ao servidor

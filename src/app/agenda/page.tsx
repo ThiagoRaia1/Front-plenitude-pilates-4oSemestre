@@ -1,11 +1,12 @@
 "use client"
 import { useState } from "react";
-import { callCreateAlunoAula, callCreateAula, getAula, IAula, IUpdateAula, updateAula, verificaAlunoAula } from "./api";
+import { callCreateAlunoAula, callCreateAula, getAula, getAulas, IAula, IUpdateAula, updateAula, verificaAlunoAula } from "./api";
 import Calendar from "../calendar/page";
 import { useAuth } from "@/context/auth";
 import { getInstrutor, IInstrutor } from "../equipe/api";
 import { getAluno, IAluno } from "../alunos/api";
 import { z } from "zod";
+import AulaList from "./aulalist";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
@@ -48,12 +49,6 @@ const formSchemaAlunoAula = z.object({
   horario: z.string()
     .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, { message: "Horário inválido", }),
 
-  cpf: z.string()
-    // Verifica se esta no formato XXX.XXX.XXX-XX
-    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
-    // Verifica o tamanho
-    .length(14, { message: "CPF deve ter 14 dígitos" }),
-
   // Valida se o tipo de aula foi escolhido
   tipoDeAula: z.string()
     .refine((value) => opcoes.includes(value), {
@@ -66,6 +61,7 @@ const Page = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBuscar, setIsBuscar] = useState(false);
   const [isJanelaAdicionarAlunoAula, setIsJanelaAdicionarAlunoAula] = useState(false);
+  const [isJanelaAulasSeguintes, setIsJanelaAulasSeguintes] = useState(false);
   const [cpf, setCpf] = useState('');
 
   const [dia, setDia] = useState('')
@@ -75,7 +71,8 @@ const Page = () => {
   const [instrutorCpf, setInstrutorCpf] = useState('')
   const [dadosInstrutor, setDadosInstrutor] = useState<IInstrutor | null>(null)
   const [aluno, setAluno] = useState<IAluno | null>(null)
-  const [aula, setAula] = useState<IAula | null>(null)
+
+  const [aulas, setAulas] = useState<IAula[] | null>(null)
 
   const [horario, setHorario] = useState('')
 
@@ -165,7 +162,6 @@ const Page = () => {
       formSchemaAlunoAula.parse({
         dataAula: `${dia}/${mes}/${ano}`,
         horario: horario,
-        cpf: cpf,
         tipoDeAula: tipoDeAula,
       });
       setErrors({})
@@ -197,7 +193,7 @@ const Page = () => {
             const updateData: IUpdateAula = {
               qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis
             }
-            await updateAula(aula.id, updateData)
+            await updateAula(aula.id, updateData) // Atualiza a quantidade de vagas disponíveis na aula
             setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
           }
         }
@@ -272,6 +268,27 @@ const Page = () => {
     setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula);
   }
 
+  const abreFechaJanelaAulasSeguintes = () => {
+    try {
+      const fetchTodos = async () => {
+        const data = await getAulas()
+        setAulas(data) // Atualiza o estado com os dados obtidos
+      }
+      fetchTodos() // Chama a função fetchTodos
+    } catch (error) {
+      console.error(error)
+    }
+    setErrors({});
+    setIsJanelaAulasSeguintes(!isJanelaAulasSeguintes);
+  }
+
+  const [selectedAula, setSelectedAula] = useState<IAula | null>(null);
+  const [isModalAlunosAula, setIsModalAlunosAula] = useState(false);
+  const handleSelectAula = (aula: IAula) => {
+    setSelectedAula(aula); // Define a aula selecionada
+    setIsModalAlunosAula(true);  // Abre o modal
+  };
+
   return (
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
@@ -337,8 +354,13 @@ const Page = () => {
             </button>
             <button
               onClick={buscar}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-5">
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Adicionar aluno a aula
+            </button>
+            <button
+              onClick={abreFechaJanelaAulasSeguintes}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-5">
+              Consultar aulas
             </button>
           </div>
           <div className="mt-8" >
@@ -609,6 +631,10 @@ const Page = () => {
                   </div>
                 </div>
               </div>
+            )}
+
+            {isJanelaAulasSeguintes && (
+              <AulaList aulas={aulas} onSelectAula={handleSelectAula}></AulaList>
             )}
           </div>
         </div>

@@ -78,7 +78,28 @@ export const getTodos = async (): Promise<IAluno[]> => {
 export const getAluno = async (cpf: string): Promise<IAluno> => {
   // Faz a requisição ao servidor
   try {
-    const response = await fetch(`http://localhost:3001/alunos/${cpf}`, {
+    const response = await fetch(`http://localhost:3001/alunos/cpf/${cpf}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`${response.statusText}`);
+    }
+
+    // Retorna os dados do aluno
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getAlunoId = async (id: number): Promise<IAluno> => {
+  // Faz a requisição ao servidor
+  try {
+    const response = await fetch(`http://localhost:3001/alunos/id/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
