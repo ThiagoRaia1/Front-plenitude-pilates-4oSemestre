@@ -1,11 +1,12 @@
 "use client"
 import { useState } from "react";
-import { callCreateAlunoAula, callCreateAula, getAula, IAula, IUpdateAula, updateAula } from "./api";
+import { callCreateAlunoAula, callCreateAula, getAula, getAulas, IAula, IUpdateAula, updateAula, verificaAlunoAula } from "./api";
 import Calendar from "../calendar/page";
 import { useAuth } from "@/context/auth";
 import { getInstrutor, IInstrutor } from "../equipe/api";
 import { getAluno, IAluno } from "../alunos/api";
 import { z } from "zod";
+import AulaList from "./aulalist";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
@@ -48,12 +49,6 @@ const formSchemaAlunoAula = z.object({
   horario: z.string()
     .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, { message: "Horário inválido", }),
 
-  cpf: z.string()
-    // Verifica se esta no formato XXX.XXX.XXX-XX
-    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
-    // Verifica o tamanho
-    .length(14, { message: "CPF deve ter 14 dígitos" }),
-
   // Valida se o tipo de aula foi escolhido
   tipoDeAula: z.string()
     .refine((value) => opcoes.includes(value), {
@@ -66,6 +61,7 @@ const Page = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBuscar, setIsBuscar] = useState(false);
   const [isJanelaAdicionarAlunoAula, setIsJanelaAdicionarAlunoAula] = useState(false);
+  const [isJanelaAulasSeguintes, setIsJanelaAulasSeguintes] = useState(false);
   const [cpf, setCpf] = useState('');
 
   const [dia, setDia] = useState('')
@@ -75,7 +71,8 @@ const Page = () => {
   const [instrutorCpf, setInstrutorCpf] = useState('')
   const [dadosInstrutor, setDadosInstrutor] = useState<IInstrutor | null>(null)
   const [aluno, setAluno] = useState<IAluno | null>(null)
-  const [aula, setAula] = useState<IAula | null>(null)
+
+  const [aulas, setAulas] = useState<IAula[] | null>(null)
 
   const [horario, setHorario] = useState('')
 
@@ -90,8 +87,8 @@ const Page = () => {
 
   const registraAula = async (event: React.FormEvent) => {
     event.preventDefault();
-    let horaComeco = new Date()
-    let horaFim = new Date()
+    let horaComeco = new Date();
+    let horaFim = new Date();
     try {
       // Validação dos dados com o Zod
       formSchemaAula.parse({
@@ -99,15 +96,16 @@ const Page = () => {
         horario: horario,
         cpf: instrutorCpf,
       });
+
       try {
-        setErrors({})
+        setErrors({});
         horaComeco = new Date(
           parseInt(ano),
           parseInt(mes) - 1,
           parseInt(dia),
           parseInt(hora),
           parseInt(minuto)
-        )
+        );
 
         horaFim = new Date(
           parseInt(ano),
@@ -115,17 +113,22 @@ const Page = () => {
           parseInt(dia),
           parseInt(hora) + 1,
           parseInt(minuto)
-        )
-        const aula = await getAula(horaComeco) // Retorna erro Not Found se a aula ja nao estiver registrada
+        );
+        // Verifica se a data/hora da aula já passou
+        if (horaComeco < new Date()) {
+          throw new Error("Não é permitido registrar uma aula em um dia ou horário que já passou.");
+        }
+
+        const aula = await getAula(horaComeco); // Retorna erro "Not Found" se a aula não estiver registrada
         if (aula != null) {
-          throw new Error("Aula ja registrada") // Se a aula ja existir, nao faz um novo cadastro
+          throw new Error("Aula já registrada"); // Se a aula já existir, não faz um novo cadastro
         }
       } catch (error: any) {
         if (error.message === "Not Found") {
           if (usuario != null) {
-            setDadosInstrutor(await getInstrutor(instrutorCpf))
+            setDadosInstrutor(await getInstrutor(instrutorCpf));
             if (dadosInstrutor != null) {
-              const instrutor = dadosInstrutor.id
+              const instrutor = dadosInstrutor.id;
               await callCreateAula(
                 {
                   data, // remover
@@ -134,15 +137,18 @@ const Page = () => {
                   qtdeVagas: 5,
                   qtdeVagasDisponiveis: 5,
                   status: "Ativo",
-                  instrutor
+                  instrutor,
                 }
               );
-              setIsModalOpen(!isModalOpen)
+              setIsModalOpen(!isModalOpen);
             }
           }
         }
-        if (error.message === "Aula ja registrada") {
-          alert("Erro: Aula ja registrada.")
+        if (error.message === "Aula já registrada") {
+          alert("Erro: Aula já registrada.");
+        }
+        if (error.message === "Não é permitido registrar uma aula em um dia ou horário que já passou.") {
+          alert(error.message); // Exibe a mensagem para o usuário
         }
       }
     } catch (error: any) {
@@ -156,19 +162,13 @@ const Page = () => {
       }
       // console.error(error)
     }
-  }
+  };
+
 
   const registraAlunoAula = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      // Validação dos dados com o Zod
-      formSchemaAlunoAula.parse({
-        dataAula: `${dia}/${mes}/${ano}`,
-        horario: horario,
-        cpf: cpf,
-        tipoDeAula: tipoDeAula,
-      });
-      setErrors({})
+      // Validação inicial para verificar se o horário já passou
       const horaComeco = new Date(
         parseInt(ano),
         parseInt(mes) - 1,
@@ -176,25 +176,40 @@ const Page = () => {
         parseInt(hora),
         parseInt(minuto)
       );
+      if (horaComeco < new Date()) {
+        throw new Error("Não é permitido agendar em um dia ou horário que já passou.");
+      }
+
+      // Validação dos dados com o Zod
+      formSchemaAlunoAula.parse({
+        dataAula: `${dia}/${mes}/${ano}`,
+        horario: horario,
+        tipoDeAula: tipoDeAula,
+      });
+      setErrors({});
+
       if (usuario != null) {
-        const aula = await getAula(horaComeco)
+        const aula = await getAula(horaComeco);
         if (aula.qtdeVagasDisponiveis == 0) {
-          throw new Error("Vagas ocupadas")
+          throw new Error("Vagas ocupadas");
         }
         if (aula != null && aluno != null) {
-          await callCreateAlunoAula({
-            aluno,
-            aula,
-            tipoDeAula
-          })
-          // console.error(aula.qtdeVagasDisponiveis)
-          aula.qtdeVagasDisponiveis -= 1
-          // console.error(aula.qtdeVagasDisponiveis)
-          const updateData: IUpdateAula = {
-            qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis
+          const verificaSeJaExiste = await verificaAlunoAula(aluno.id, aula.id);
+          if (verificaSeJaExiste) {
+            alert("Aluno já cadastrado para essa aula.");
+          } else {
+            await callCreateAlunoAula({
+              aluno,
+              aula,
+              tipoDeAula,
+            });
+            aula.qtdeVagasDisponiveis -= 1; // Reduz a quantidade de vagas disponíveis
+            const updateData: IUpdateAula = {
+              qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis,
+            };
+            await updateAula(aula.id, updateData); // Atualiza a quantidade de vagas disponíveis na aula
+            setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula);
           }
-          await updateAula(aula.id, updateData)
-          setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
         }
       }
     } catch (error: any) {
@@ -207,13 +222,17 @@ const Page = () => {
         setErrors(newErrors); // Atualiza o estado de erros
       }
       if (error.message === "Not Found") {
-        alert("Erro: Não há aula registrada para o horário informado.")
+        alert("Erro: Não há aula registrada para o horário informado.");
       }
       if (error.message === "Vagas ocupadas") {
-        alert("Erro: Não há vagas para o horário informado.")
+        alert("Erro: Não há vagas para o horário informado.");
+      }
+      if (error.message === "Não é permitido agendar em um dia ou horário que já passou.") {
+        alert(error.message); // Exibe a mensagem de erro caso o horário já tenha passado
       }
     }
-  }
+  };
+
 
   const handlePesquisarAluno = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -267,13 +286,34 @@ const Page = () => {
     setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula);
   }
 
+  const abreFechaJanelaAulasSeguintes = () => {
+    try {
+      const fetchTodos = async () => {
+        const data = await getAulas()
+        setAulas(data) // Atualiza o estado com os dados obtidos
+      }
+      fetchTodos() // Chama a função fetchTodos
+    } catch (error) {
+      console.error(error)
+    }
+    setErrors({});
+    setIsJanelaAulasSeguintes(!isJanelaAulasSeguintes);
+  }
+
+  const [selectedAula, setSelectedAula] = useState<IAula | null>(null);
+  const [isModalAlunosAula, setIsModalAlunosAula] = useState(false);
+  const handleSelectAula = (aula: IAula) => {
+    setSelectedAula(aula); // Define a aula selecionada
+    setIsModalAlunosAula(true);  // Abre o modal
+  };
+
   return (
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
         <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
           <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
             <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
-            <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
+            <div className="mx-auto w-full mt-12 mb-[600px] pb-4 ">
               <div className="relative">
                 <h1
                   className="font-bold font-spartan text-[30px] text-white">
@@ -332,12 +372,20 @@ const Page = () => {
             </button>
             <button
               onClick={buscar}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-5">
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Adicionar aluno a aula
+            </button>
+            <button
+              onClick={abreFechaJanelaAulasSeguintes}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-5">
+              Consultar aulas
             </button>
           </div>
           <div className="mt-8" >
             <Calendar onDateChange={handleDateChange} />
+            {isJanelaAulasSeguintes && (
+              <AulaList aulas={aulas} onSelectAula={handleSelectAula}></AulaList>
+            )}
           </div>
 
           <div>
@@ -605,6 +653,8 @@ const Page = () => {
                 </div>
               </div>
             )}
+
+
           </div>
         </div>
       </div>

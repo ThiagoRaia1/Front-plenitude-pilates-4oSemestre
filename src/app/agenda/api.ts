@@ -1,4 +1,5 @@
 import { IAluno } from "../alunos/api"
+import { IInstrutor } from "../equipe/api"
 
 export interface ICreateAula {
   data: Date
@@ -56,8 +57,44 @@ export interface IAula {
   qtdeVagas: number
   qtdeVagasDisponiveis: number
   status: string
+  instrutor: IInstrutor
+  alunos: IAluno[]
+}
+
+export const getAulas = async (): Promise<IAula[]> => {
+  const response = await fetch('http://localhost:3001/aula')
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+  return await response.json()
+}
+
+export interface IAlunoAula {
+  id: number
+  aluno: number
   instrutor: number
 }
+
+export const getAlunoAulas = async (id: number): Promise<IAlunoAula[]> => {
+  // Faz a requisição ao servidor
+  try {
+    const response = await fetch(`http://localhost:3001/alunoaula/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+
+    // Retorna os dados do aula
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+};
 
 export const getAula = async (horaComeco: Date): Promise<any> => {
   // Faz a requisição ao servidor
@@ -103,5 +140,27 @@ export const updateAula = async (id: number, data: IUpdateAula) => {
   } catch (error) {
     console.error('Erro ao atualizar aula:', error);
     throw error; // Repassa o erro para ser tratado onde a função for chamada
+  }
+};
+
+export const verificaAlunoAula = async (alunoId: number, aulaId: number): Promise<boolean> => {
+  try {
+    const response = await fetch(`http://localhost:3001/alunoaula/verifica`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ aluno: alunoId, aula: aulaId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao verificar aluno e aula');
+    }
+
+    const data = await response.json();
+    return data.existe; // Retorna true se existir, false caso contrário
+  } catch (error) {
+    console.error('Erro na verificação:', error);
+    throw error;
   }
 };

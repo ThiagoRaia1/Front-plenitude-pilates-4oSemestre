@@ -75,10 +75,10 @@ export const getTodos = async (): Promise<IAluno[]> => {
   return await response.json()
 }
 
-export const getAluno = async (cpf: string): Promise<any> => {
+export const getAluno = async (cpf: string): Promise<IAluno> => {
   // Faz a requisição ao servidor
   try {
-    const response = await fetch(`http://localhost:3001/alunos/${cpf}`, {
+    const response = await fetch(`http://localhost:3001/alunos/cpf/${cpf}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -86,13 +86,33 @@ export const getAluno = async (cpf: string): Promise<any> => {
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao buscar aluno: ${response.statusText}`);
+      throw new Error(`${response.statusText}`);
     }
 
     // Retorna os dados do aluno
     return await response.json();
   } catch (error) {
-    console.error('Erro ao buscar aluno:', error);
+    throw error;
+  }
+};
+
+export const getAlunoId = async (id: number): Promise<IAluno> => {
+  // Faz a requisição ao servidor
+  try {
+    const response = await fetch(`http://localhost:3001/alunos/id/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`${response.statusText}`);
+    }
+
+    // Retorna os dados do aluno
+    return await response.json();
+  } catch (error) {
     throw error;
   }
 };

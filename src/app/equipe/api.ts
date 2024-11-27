@@ -95,7 +95,7 @@ export const callCreateUsuario = async (data: ICreateUsuario): Promise<ICreateUs
 }
 
 export const getTodos = async (): Promise<IInstrutor[]> => {
-  const response = await fetch('http://localhost:3001/instrutor')
+  const response = await fetch(`http://localhost:3001/instrutor`)
   return await response.json()
 }
 
@@ -128,7 +128,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
 
 export const updateInstrutor = async (cpf: string, data: IUpdateInstrutor) => {
   try {
-    const response = await fetch('http://localhost:3001/instrutor/${cpf}', {
+    const response = await fetch(`http://localhost:3001/instrutor/${cpf}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
