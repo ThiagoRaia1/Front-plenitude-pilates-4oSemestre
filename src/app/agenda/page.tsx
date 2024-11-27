@@ -1,343 +1,615 @@
 "use client"
 import { useState } from "react";
-import { callCreate, ICreateAluno } from "./api";
+import { callCreateAlunoAula, callCreateAula, getAula, IAula, IUpdateAula, updateAula } from "./api";
+import Calendar from "../calendar/page";
+import { useAuth } from "@/context/auth";
+import { getInstrutor, IInstrutor } from "../equipe/api";
+import { getAluno, IAluno } from "../alunos/api";
+import { z } from "zod";
+
+const formSchemaCpf = z.object({
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+});
+
+const formSchemaAula = z.object({
+  // Verifica se a data digita é válida e se está no formato 99/99/9999
+  dataAula: z.string()
+    .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+      { message: "Data inválida" }
+    )
+    .length(10, { message: "A data deve estar no formato dd/mm/aaaa" }),
+
+  // Verifica se o horário é valido
+  horario: z.string()
+    .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, { message: "Horário inválido", }),
+
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+});
+
+const opcoes = ['Aula Normal', 'Aula Experimental'];
+
+const formSchemaAlunoAula = z.object({
+  // Verifica se a data digita é válida e se está no formato 99/99/9999
+  dataAula: z.string()
+    .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+      { message: "Data inválida" }
+    )
+    .length(10, { message: "A data deve estar no formato dd/mm/aaaa " }),
+
+  // Verifica se o horário é valido
+  horario: z.string()
+    .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, { message: "Horário inválido", }),
+
+  cpf: z.string()
+    // Verifica se esta no formato XXX.XXX.XXX-XX
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "CPF deve conter o formato indicado", })
+    // Verifica o tamanho
+    .length(14, { message: "CPF deve ter 14 dígitos" }),
+
+  // Valida se o tipo de aula foi escolhido
+  tipoDeAula: z.string()
+    .refine((value) => opcoes.includes(value), {
+      message: `Selecione o tipo de aula`,
+    }),
+});
 
 const Page = () => {
+  const { usuario, isAuthenticated, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isbuscar, setisbuscar] = useState(false);
+  const [isBuscar, setIsBuscar] = useState(false);
+  const [isJanelaAdicionarAlunoAula, setIsJanelaAdicionarAlunoAula] = useState(false);
+  const [cpf, setCpf] = useState('');
 
-  const [nome, setNome] = useState('')
   const [dia, setDia] = useState('')
   const [mes, setMes] = useState('')
   const [ano, setAno] = useState('')
-  const [cpf, setCpf] = useState('')
-  const [rua, setRua] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [bairro, setBairro] = useState('')
-  const [cep, setCep] = useState('')
-  const [cidade, setCidade] = useState('')
+  const [tipoDeAula, setTipoDeAula] = useState('')
+  const [instrutorCpf, setInstrutorCpf] = useState('')
+  const [dadosInstrutor, setDadosInstrutor] = useState<IInstrutor | null>(null)
+  const [aluno, setAluno] = useState<IAluno | null>(null)
+  const [aula, setAula] = useState<IAula | null>(null)
 
+  const [horario, setHorario] = useState('')
+
+  const [hora, minuto] = horario.split(':'); // Divide o horário no formato HH:MM
+  const data = new Date(
+    parseInt(ano),
+    parseInt(mes) - 1,
+    parseInt(dia)
+  );
+
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const registraAula = async (event: React.FormEvent) => {
+    event.preventDefault();
+    let horaComeco = new Date()
+    let horaFim = new Date()
+    try {
+      // Validação dos dados com o Zod
+      formSchemaAula.parse({
+        dataAula: `${dia}/${mes}/${ano}`,
+        horario: horario,
+        cpf: instrutorCpf,
+      });
+      try {
+        setErrors({})
+        horaComeco = new Date(
+          parseInt(ano),
+          parseInt(mes) - 1,
+          parseInt(dia),
+          parseInt(hora),
+          parseInt(minuto)
+        )
+
+        horaFim = new Date(
+          parseInt(ano),
+          parseInt(mes) - 1,
+          parseInt(dia),
+          parseInt(hora) + 1,
+          parseInt(minuto)
+        )
+        const aula = await getAula(horaComeco) // Retorna erro Not Found se a aula ja nao estiver registrada
+        if (aula != null) {
+          throw new Error("Aula ja registrada") // Se a aula ja existir, nao faz um novo cadastro
+        }
+      } catch (error: any) {
+        if (error.message === "Not Found") {
+          if (usuario != null) {
+            setDadosInstrutor(await getInstrutor(instrutorCpf))
+            if (dadosInstrutor != null) {
+              const instrutor = dadosInstrutor.id
+              await callCreateAula(
+                {
+                  data, // remover
+                  horaComeco,
+                  horaFim,
+                  qtdeVagas: 5,
+                  qtdeVagasDisponiveis: 5,
+                  status: "Ativo",
+                  instrutor
+                }
+              );
+              setIsModalOpen(!isModalOpen)
+            }
+          }
+        }
+        if (error.message === "Aula ja registrada") {
+          alert("Erro: Aula ja registrada.")
+        }
+      }
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
+      // console.error(error)
+    }
+  }
+
+  const registraAlunoAula = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      // Validação dos dados com o Zod
+      formSchemaAlunoAula.parse({
+        dataAula: `${dia}/${mes}/${ano}`,
+        horario: horario,
+        cpf: cpf,
+        tipoDeAula: tipoDeAula,
+      });
+      setErrors({})
+      const horaComeco = new Date(
+        parseInt(ano),
+        parseInt(mes) - 1,
+        parseInt(dia),
+        parseInt(hora),
+        parseInt(minuto)
+      );
+      if (usuario != null) {
+        const aula = await getAula(horaComeco)
+        if (aula.qtdeVagasDisponiveis == 0) {
+          throw new Error("Vagas ocupadas")
+        }
+        if (aula != null && aluno != null) {
+          await callCreateAlunoAula({
+            aluno,
+            aula,
+            tipoDeAula
+          })
+          // console.error(aula.qtdeVagasDisponiveis)
+          aula.qtdeVagasDisponiveis -= 1
+          // console.error(aula.qtdeVagasDisponiveis)
+          const updateData: IUpdateAula = {
+            qtdeVagasDisponiveis: aula.qtdeVagasDisponiveis
+          }
+          await updateAula(aula.id, updateData)
+          setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
+        }
+      }
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
+      if (error.message === "Not Found") {
+        alert("Erro: Não há aula registrada para o horário informado.")
+      }
+      if (error.message === "Vagas ocupadas") {
+        alert("Erro: Não há vagas para o horário informado.")
+      }
+    }
+  }
+
+  const handlePesquisarAluno = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      formSchemaCpf.parse({
+        cpf: cpf,
+      });
+      setAluno(await getAluno(cpf))
+      if (aluno != null) {
+        setIsBuscar(!isBuscar); // Fecha a janela de busca de aluno por cpf
+        setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula)
+        // Exibe os dados na janela
+        setErrors({});
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
+    }
+  };
+
+  const handleDateChange = (dataSelecionada: Date | null) => {
+    if (dataSelecionada != null) {
+      setDia(dataSelecionada.getUTCDate().toString().padStart(2, '0')) // Garante que o dia tenha 2 dígitos)
+      setMes((dataSelecionada.getUTCMonth() + 1).toString().padStart(2, '0')); // Ajusta o mês (adiciona 1))
+      setAno(dataSelecionada.getUTCFullYear().toString())
+    }
+  };
 
   const cadFunc = () => {
+    setErrors({})
     setIsModalOpen(!isModalOpen);
   }
-  const buscar =() =>{
-    setisbuscar(!isbuscar);
+  const buscar = () => {
+    setErrors({})
+    setIsBuscar(!isBuscar);
   }
 
-  const registraAluno = async () => {
-    try {
-      const dataNascimento = new Date(parseInt(ano, 10), parseInt(mes, 10), parseInt(dia, 10))
-      await callCreate(
-        {
-          nome,
-          dataNascimento,
-          cpf, 
-          telefone, 
-          status: "Ativo", 
-          ultimaAlteracao: "a", // usuario logado
-          dataUltimaAlteracao: new Date(), 
-          numeroRua: 0, // inserir campo na interface
-          numeroCasa: 0,  // inserir campo na interface
-          cep, 
-          bairro, 
-          cidade
-      }
-    );
-      
-    } catch (error) {
-      console.error(error)
-    }
+  const abreFechaJanelaPesquisarAluno = () => {
+    setErrors({});
+    setIsBuscar(!isBuscar);
+  }
+
+  const abreFechaJanelaRegistrarAlunoAula = () => {
+    setErrors({});
+    setIsJanelaAdicionarAlunoAula(!isJanelaAdicionarAlunoAula);
   }
 
   return (
     <section>
-    <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
-    <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
-      <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
-      <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
-        <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
-          <div className="relative">
-          <a href="/agenda">
-            <button 
-              className=" font-bold font-spartan text-[40px] mb-4 block   w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
-              AGENDA
-            </button>
-            </a>
-          </div>
-          <div className="relative">
-          <a href="/alunos">
-            <button 
-              className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
-              
-              ALUNOS
-            </button>
-            </a>
-          </div>
-          <div className="relative">
-          <a href="/equipe">
-            <button 
-              className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
-              EQUIPE
-              </button>
-            </a>
-          </div>
-          <div className="relative">
-            <a href="/financeiro">
-              <button 
-                className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
-                FINANCEIRO
-              </button>
-            </a>
+      <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
+        <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
+          <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
+            <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
+            <div className="mx-auto w-full mt-12 mb-4 pb-4 ">
+              <div className="relative">
+                <h1
+                  className="font-bold font-spartan text-[30px] text-white">
+                  Usuario: {usuario?.nome}
+                </h1>
+                <a href="/agenda">
+                  <button
+                    className=" font-bold font-spartan text-[40px] mb-4 block   w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    AGENDA
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/alunos">
+                  <button
+                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    ALUNOS
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/equipe">
+                  <button
+                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    EQUIPE
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/financeiro">
+                  <button
+                    className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    FINANCEIRO
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/login">
+                  <button
+                    onClick={logout}
+                    className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    LOGOUT
+                  </button>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div className=" bg-no-repeat bg-cover  " style={{ backgroundImage: "url('fundo.png')" }}>
-      <div className="flex flex justify-end gap-4">
-        <button  
-          onClick={cadFunc} 
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-          Registrar novo aluno
-        </button>
-      <button 
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-        Editar registro
-      </button>
-      <button 
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[100px]">
-        Pesquisar aluno
-      </button>
-    </div>
+        <div className=" bg-no-repeat bg-cover  " style={{ backgroundImage: "url('fundo.png')" }}>
+          <div className="flex flex justify-end gap-4">
+            <button
+              onClick={cadFunc}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              Registrar nova aula
+            </button>
+            <button
+              onClick={buscar}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-5">
+              Adicionar aluno a aula
+            </button>
+          </div>
+          <div className="mt-8" >
+            <Calendar onDateChange={handleDateChange} />
+          </div>
 
-    <div >
-    <table className="w-full border-collapse border border-blue-500 max-w-xl mt-16 mx-auto">
-      <thead>
-        <tr className="bg-blue-500 text-white">
-          <th className="py-2 px-4 text-left">id</th>
-          <th className="py-2 px-4 text-left">Cpf</th>
-          <th className="py-2 px-4 text-left">status</th>
-          <th className="py-2 px-4 text-left">Ultima Alteracao</th>
-          <th className="py-2 px-4 text-left">Data ultima Alteracao</th>
-          <th className="py-2 px-4 text-left">numero Rua</th>
-          <th className="py-2 px-4 text-left">numero Casa</th>
-          <th className="py-2 px-4 text-left">cep</th>
-          <th className="py-2 px-4 text-left">bairro</th>
-          <th className="py-2 px-4 text-left">cidade</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr className="bg-white border-b border-blue-500">
-          <td className="py-2 px-4">John Doe</td>
-          <td className="py-2 px-4">25</td>
-          <td className="py-2 px-4">New York</td>
-        </tr>
-        <tr className="bg-white border-b border-blue-500">
-          <td className="py-2 px-4">Jane Smith</td>
-          <td className="py-2 px-4">30</td>
-          <td className="py-2 px-4">Los Angeles</td>
-        </tr>
-        <tr className="bg-white border-b border-blue-500">
-          <td className="py-2 px-4">Bob Johnson</td>
-          <td className="py-2 px-4">40</td>
-          <td className="py-2 px-4">Chicago</td>
-        </tr>
-      </tbody>
-    </table>
-     
-        
-  {isModalOpen && (
-    <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
-    <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
-    <div className=" w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
-
-    <div className="w-full  mx-auto mt-8">
-            <div className="mb-6">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Nome:</label>
-                        <input 
-                        type="text" 
-                        id="first_name"
-                        value={nome}
-                        onChange={(e) => setNome(e.target.value)}
-                        className="w-80 rounded-lg text-black border py-2 px-3"
-                        />
+          <div>
+            {isModalOpen && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      Cadastro de aula:
+                    </label>
+                    <div className="w-full  mx-auto mt-8">
+                      <div className="mb-6">
+                        <div className="grid grid-cols-2 gap-4">
+                        </div>
+                        <div className="grid grid-cols-2 gap-40 mt-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Data da aula: dd/mm/yyyy
+                            </label>
+                            <input
+                              type="text"
+                              id="dia"
+                              placeholder="dd"
+                              value={dia}
+                              onChange={(e) => setDia(e.target.value)}
+                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                            />
+                            <input
+                              type="text"
+                              id="mes"
+                              placeholder="mm"
+                              value={mes}
+                              onChange={(e) => setMes(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px] "
+                            />
+                            <input
+                              type="text"
+                              id="ano"
+                              placeholder="aaaa"
+                              value={ano}
+                              onChange={(e) => setAno(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                            {errors.dataAula && <p style={{ color: "red" }}>{errors.dataAula}</p>}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-40 mt-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Horário:
+                            </label>
+                            <select
+                              value={horario}
+                              onChange={(e) => setHorario(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            >
+                              <option value="08:00">08:00</option>
+                              <option value="09:00">09:00</option>
+                              <option value="10:00">10:00</option>
+                              <option value="11:00">11:00</option>
+                              <option value="12:00">12:00</option>
+                              <option value="13:00">13:00</option>
+                              <option value="14:00">14:00</option>
+                              <option value="15:00">15:00</option>
+                              <option value="16:00">16:00</option>
+                              <option value="17:00">17:00</option>
+                              <option value="18:00">18:00</option>
+                            </select>
+                            {errors.horario && <p style={{ color: "red" }}>{errors.horario}</p>}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-40 mt-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Instrutor (CPF):
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              placeholder="999.999.999-99"
+                              value={instrutorCpf}
+                              onChange={(e) => setInstrutorCpf(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3" />
+                            {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-17 flex justify-end gap-4">
+                        <button
+                          onClick={cadFunc}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={registraAula}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-10 py-2 rounded-lg hover:bg-teal-700 mr-8">
+                          Salvar
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">CPF:</label>
-                      <input 
-                        type="text" 
-                        id="last_name" 
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Janela para pesquisar o aluno que será registrado a aula */}
+            {isBuscar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6  ">
+                  <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <label
+                        htmlFor="first_name"
+                        className=" ml-4 text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">
+                        Digite o CPF do aluno que quer adicionar:
+                      </label>
+                      <input
+                        type="text"
+                        id="first_name"
+                        placeholder="999.999.999-99"
                         value={cpf}
                         onChange={(e) => setCpf(e.target.value)}
-                        className="w-80 rounded-lg text-black border py-2 px-3 " 
+                        className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
                       />
+                      {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
+                      <div className="flex mt-10 gap-4">
+                        <button
+                          onClick={handlePesquisarAluno}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Pesquisar
+                        </button>
+                        <button
+                          onClick={abreFechaJanelaPesquisarAluno}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700 ">
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Data de nascimento: dd/mm/yyyy</label>
-                        <input 
-                          type="text" 
-                          id="dia" 
-                          value={dia}
-                          onChange={(e) => setDia(e.target.value)}
-                          className="w-[50px] rounded-lg text-black border py-2 px-[8px] mr-2 "
-                        />
-                        <input 
-                          type="text" 
-                          id="mes" 
-                          value={mes}
-                          onChange={(e) => setMes(e.target.value)}
-                          className=" w-[70px] rounded-lg text-black border py-2 mr-2 px-[8px] "
-                        />
-                        <input 
-                          type="text" 
-                          id="ano"
-                          value={ano}
-                          onChange={(e) => setAno(e.target.value)}
-                          className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
-                        />
+              </div>
+            )}
+
+            {isJanelaAdicionarAlunoAula && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      Registrar aluno a aula:
+                    </label>
+                    <div className="w-full  mx-auto my-16">
+                      <div className="mb-6">
+                        <div className="grid grid-cols-2 gap-4">
+                        </div>
+                        <div className="grid grid-cols-2 gap-40 mt-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Data da aula: dd/mm/aaaa
+                            </label>
+                            <input
+                              type="text"
+                              id="dia"
+                              value={dia}
+                              onChange={(e) => setDia(e.target.value)}
+                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                            />
+                            <input
+                              type="text"
+                              id="mes"
+                              value={mes}
+                              onChange={(e) => setMes(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px] "
+                            />
+                            <input
+                              type="text"
+                              id="ano"
+                              value={ano}
+                              onChange={(e) => setAno(e.target.value)}
+                              className=" w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                            {errors.dataAula && <p style={{ color: "red" }}>{errors.dataAula}</p>}
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Tipo de aula:
+                            </label>
+                            <select
+                              id="tipoDeAula"
+                              value={tipoDeAula}
+                              onChange={(e) => setTipoDeAula(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3">
+                              <option value="">Selecione um tipo</option>
+                              {opcoes.map((opcao, index) => (
+                                <option key={index} value={opcao}>
+                                  {opcao}
+                                </option>
+                              ))}
+                            </select>
+                            {errors.tipoDeAula && <p style={{ color: "red" }}>{errors.tipoDeAula}</p>}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-40 mt-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Horário:
+                            </label>
+                            <input
+                              id="time-input"
+                              type="time"
+                              min="08:00"
+                              max="18:00"
+                              value={horario}
+                              onChange={(e) => setHorario(e.target.value)}
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                            {errors.horario && <p style={{ color: "red" }}>{errors.horario}</p>}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-40 mt-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Aluno:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={aluno?.nome}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-17 flex justify-end gap-4">
+                        <button
+                          onClick={abreFechaJanelaRegistrarAlunoAula}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700">
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={registraAlunoAula}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] px-10 py-2 rounded-lg hover:bg-teal-700 mr-8">
+                          Salvar
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                    <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Rua:</label>
-              <input 
-                type="text" 
-                id="last_name" 
-                value={rua}
-                onChange={(e) => setRua(e.target.value)}
-                className="w-80 rounded-lg text-black border py-2 px-3 " 
-              />
-                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Telefone:</label>
-                        <input 
-                        type="text" 
-                        id="first_name" 
-                        value={telefone}
-                        onChange={(e) => setTelefone(e.target.value)}
-                        className="w-80 rounded-lg text-black border py-2 px-3"/>
-                    </div>
-                    <div>
-                    <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Bairro:</label>
-              <input 
-                type="text" 
-                id="last_name"
-                value={bairro}
-                onChange={(e) => setBairro(e.target.value)}
-                className="w-80 rounded-lg text-black border py-2 px-3 " 
-              />
-                    </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Cep:</label>
-                        <input 
-                        type="text" 
-                        id="first_name" 
-                        value={cep}
-                        onChange={(e) => setCep(e.target.value)}
-                        className="w-80 rounded-lg text-black border py-2 px-3"
-                        />
-                    </div>
-                    <div>
-                    <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Cidade:</label>
-              <input 
-                type="text" 
-                id="last_name" 
-                value={cidade}
-                onChange={(e) => setCidade(e.target.value)}
-                className="w-80 rounded-lg text-black border py-2 px-3 " 
-              />
-                    </div>
-                </div>
-
-                
-
-
-            </div>
-
-            
-          
-
-            <div className="mt-17 flex justify-end gap-4">
-                <button 
-                onClick={cadFunc}
-                className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Cancelar</button>
-                <button
-                  onClick={registraAluno}
-                  className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">
-                    Salvar
-                </button>
-            
-            </div>
+              </div>
+            )}
+          </div>
         </div>
-    </div>
-</div>
-            
-        </div>
-        
-        
-)}
-
-{isbuscar && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
-          <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
-            <div className=" w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
-
-    <div className="w-full  mx-auto mt-8">
-   
-            <div className="mb-6">
-                <div className="center">
-                    <div>
-                        <label htmlFor="first_name" className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">Nome:</label>
-                        <input type="text" id="first_name" className="w-80 rounded-lg border py-2 px-3"/>
-                    </div>
-                    
-                </div>
-
-                
-
-
-            </div>
-
-            
-          
-
-            <div className="mt-17 flex justify-end gap-4">
-                <button className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Cancelar</button>
-                <button className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700  ">Salvar</button>
-            
-            </div>
-        </div>
-    </div>
-</div>
-            <button 
-              onClick={buscar} 
-              className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Fechar
-            </button>
-            </div>
-        
-        
-      )}
-  
-    </div>
-    
-    
-    
-</div>
-        
-       
       </div>
     </section>
-    
-    )
-  }
-  
-  export default Page
+  )
+}
+
+export default Page

@@ -1,60 +1,92 @@
 "use client"
 
 import { useAuth } from "@/context/auth"
-import Link from "next/link"
 import { useState } from "react"
-import { login as loginApi } from "./api"
+import { getDadosUsuarioLogado, IUsuario, login as loginApi } from "./api"
+import { useRouter } from 'next/navigation'
 
 const Page = () => {
+  const router = useRouter()
   const { isAuthenticated, login, logout } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   const handleLogin = async () => {
     try {
-      const { token } = await loginApi({ email, password })
+      const { token } = await loginApi({ email, password });
       if (!token) {
-        throw new Error('Token não encontrado')
+        throw new Error("Token não encontrado");
       }
-      localStorage.setItem('token', token) // Salva o token no localStorage
-      login()
+
+      localStorage.setItem("token", token);
+
+      const usuario: IUsuario = await getDadosUsuarioLogado({ email, password });
+
+      login(usuario, token); // Atualiza o contexto com os dados do usuário e o token
+      router.push('/agenda');
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
+    <>
       {isAuthenticated ? (
-        <>
+        <div className="flex flex-col items-center justify-center h-screen">
           <h1 className="text-4xl font-bold">Você está logado!</h1>
-          <button onClick={logout} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+          <button
+            onClick={() => router.push('/agenda')}
+            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+            Ir para o menu
+          </button>
+          <button
+            onClick={logout}
+            className="mt-4 bg-blue-500 text-white px-11 py-2 rounded">
             Logout
           </button>
-        </>
+        </div >
       ) : (
-        <>
-          <h1 className="text-4xl font-bold">Plenitude Pilates</h1>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-4 text-black px-4 py-2 border border-gray-300 rounded"
-          />
-          <input
-            type="password"
-            placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-4 text-black px-4 py-2 border border-gray-300 rounded"
-          />
-          <button onClick={handleLogin} className="mt-4 bg-blue-500 text-white px-24 py-2 rounded hover:underline">
-                Login
-          </button>
-        </>
+        <section>
+          <div className="grid md:h-screen md:grid-cols-2">
+            <div className="flex flex-col items-center justify-center  " style={{ backgroundImage: "url('logo.jpg')" }}>
+            </div>
+            <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
+              <div className="max-w-lg px-5 py-16 text-center md:px-10 md:py-24 lg:py-32">
+                <div className="relative">
+                  <img alt="" src="https://assets.website-files.com/6357722e2a5f19121d37f84d/6357722e2a5f190b7e37f878_EnvelopeSimple.svg" className="absolute bottom-0 left-[5%] right-auto top-[26%] inline-block" />
+                  <input
+                    type="email"
+                    className="mt-20 mb-4 block h-9 w-full border border-black bg-[#f2f2f7] px-20 py-6 pl-14 text-sm text-[#333333] rounded-full"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="relative mb-4">
+                  <img alt="" src="https://assets.website-files.com/6357722e2a5f19121d37f84d/6357722e2a5f19601037f879_Lock-2.svg" className="absolute bottom-0 left-[5%] right-auto top-[26%] inline-block" />
+                  <input
+                    type="password"
+                    className="mb-4 block h-9 w-full border border-black bg-[#f2f2f7] px-20 py-6 pl-14 text-sm text-[#333333] rounded-full"
+                    placeholder="Senha"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <button onClick={handleLogin}>
+                  <div className="flex items-center justify-center bg-[#276ef1] px-[120px] py-4 text-center font-semibold text-white rounded-full">
+                    <p className="mr-6 font-bold">Login</p>
+                    <svg className="h-4 w-4 flex-none" fill="currentColor" viewBox="0 0 20 21" xmlns="http://www.w3.org/2000/svg">
+                      <title>Arrow Right</title>
+                      <polygon points="16.172 9 10.101 2.929 11.515 1.515 20 10 19.293 10.707 11.515 18.485 10.101 17.071 16.172 11 0 11 0 9"></polygon>
+                    </svg>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
-    </div>
+    </>
   )
 }
 
