@@ -126,21 +126,27 @@ const Page = () => {
       } catch (error: any) {
         if (error.message === "Not Found") {
           if (usuario != null) {
-            setDadosInstrutor(await getInstrutor(instrutorCpf));
-            if (dadosInstrutor != null) {
-              const instrutor = dadosInstrutor.id;
-              await callCreateAula(
-                {
-                  data, // remover
-                  horaComeco,
-                  horaFim,
-                  qtdeVagas: 5,
-                  qtdeVagasDisponiveis: 5,
-                  status: "Ativo",
-                  instrutor,
-                }
-              );
-              setIsModalOpen(!isModalOpen);
+            try {
+              setDadosInstrutor(await getInstrutor(instrutorCpf));
+              if (dadosInstrutor != null) {
+                const instrutor = dadosInstrutor.id;
+                await callCreateAula(
+                  {
+                    data, // remover
+                    horaComeco,
+                    horaFim,
+                    qtdeVagas: 5,
+                    qtdeVagasDisponiveis: 5,
+                    status: "Ativo",
+                    instrutor,
+                  }
+                );
+                setIsModalOpen(!isModalOpen);
+              }
+            } catch (error: any) {
+              if (error.message === "Not Found") {
+                alert("CPF não registrado")
+              }
             }
           }
         }
@@ -408,7 +414,7 @@ const Page = () => {
                             <label
                               htmlFor="first_name"
                               className=" text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
-                              Data da aula: dd/mm/yyyy
+                              Data da aula: dd/mm/aaaa
                             </label>
                             <input
                               type="text"

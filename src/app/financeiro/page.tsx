@@ -79,7 +79,6 @@ const Page = () => {
   const handleSubmitCriarPagamento = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      console.error(dataPagamento)
       // Validação dos dados com o Zod
       formSchema.parse({
         cpf: cpf,
@@ -118,7 +117,6 @@ const Page = () => {
         });
         setErrors(newErrors); // Atualiza o estado de erros
       }
-      console.error(error)
     }
   };
 
