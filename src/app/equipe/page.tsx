@@ -252,7 +252,7 @@ const Page = () => {
         setNumeroRua(instrutor.numeroRua.toString())
         setNumeroCasa(instrutor.numeroCasa.toString())
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
         const newErrors: { [key: string]: string } = {};
@@ -260,6 +260,9 @@ const Page = () => {
           newErrors[err.path[0]] = err.message;
         });
         setErrors(newErrors); // Atualiza o estado de erros
+      }
+      if (error.message === "Not Found") {
+        alert("CPF não registrado.")
       }
     }
   };
@@ -279,7 +282,8 @@ const Page = () => {
         bairro: bairro,
         cidade: cidade,
       });
-      if (instrutor != null && usuario != null) {
+      const instrutor = await getInstrutor(cpfAtual)
+      if (usuario != null) {
         const updateData = {
           nome,
           dataNascimento: new Date(instrutor.dataNascimento),
@@ -297,7 +301,6 @@ const Page = () => {
         await updateInstrutor(cpfAtual, updateData);
         setIsJanelaEditarInstrutor(!isJanelaEditarInstrutor)
         limpaCampos()
-        setErrors({});
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -960,7 +963,7 @@ const Page = () => {
                     <label
                       htmlFor="first_name"
                       className="text-[24px] font-[Garet] font-sans font-bold text-[#9f968a]">
-                      Editar Aluno:
+                      Editar Instrutor:
                     </label>
                   </div>
                   <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">

@@ -330,7 +330,6 @@ const Page = () => {
         setIsJanelaEditarAluno(!isJanelaEditarAluno)
         limpaCampos()
       }
-
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Se ocorrer um erro de validação, configuramos os erros de campo
