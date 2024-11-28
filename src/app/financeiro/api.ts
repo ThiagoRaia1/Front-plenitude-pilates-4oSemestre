@@ -1,42 +1,71 @@
-export interface ICreatPagamento {
-  id: number;
-  cliente: string;
-  ultimaAlteracao: string;
-  dataUltimaDeclaracao: Date;
-  status: string;
+export interface IPagamento {
+  id: number
+  aluno: number;
   formaDePagamento: string;
+  status: string;
+  valorPago: number;
   data: Date;
-  valorpago: number; 
+  ultimaAlteracao: string;
+  dataUltimaAlteracao: Date;
+  usuario: number
 }
 
-export const callCreatePagamento = async (data: ICreatPagamento): Promise<ICreatPagamento> => {
+export interface ICreatePagamento {
+  aluno: number;
+  formaDePagamento: string;
+  status: string;
+  valorPago: number; // mudar para number 
+  data: Date;
+  ultimaAlteracao: string;
+  dataUltimaAlteracao: Date;
+  usuario: number
+}
+
+export const callCreate = async (data: ICreatePagamento): Promise<ICreatePagamento> => {
   try {
     const response = await fetch('http://localhost:3001/pagamento', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        ...data,
-        dataUltimaDeclaracao: data.dataUltimaDeclaracao.toISOString(), // Garantindo que a data esteja em formato ISO
-        data: data.data.toISOString(), // Convertendo a data para o formato ISO
-      }),
+      body: JSON.stringify(data)
     });
 
-    // Verifica se a resposta foi ok (status 200-299)
     if (!response.ok) {
-      const errorResponse = await response.json();
-      throw new Error(`Erro ao criar pagamento: ${errorResponse.message || response.statusText}`);
+      console.error("deu erro")
+      throw new Error(`${response.statusText}`);
     }
 
-    // Se tudo correr bem, parseia a resposta JSON
-    const result = await response.json();
-
-    return result;
+    // Retorna os dados do aluno
+    return await response.json();
   } catch (error) {
-    // Captura de qualquer erro ocorrido no processo
-    console.error('Erro na criação do pagamento', error);
-    throw error;  // Re-lança o erro para ser tratado em outro lugar
+    throw error;
   }
 };
 
+
+export const getTodos = async (): Promise<IPagamento[]> => {
+  const response = await fetch('http://localhost:3001/pagamento')
+  return await response.json()
+}
+
+export const getPagamento = async (id: number): Promise<IPagamento> => {
+  // Faz a requisição ao servidor
+  try {
+    const response = await fetch(`http://localhost:3001/alunos/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`${response.statusText}`);
+    }
+
+    // Retorna os dados do aluno
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+};
