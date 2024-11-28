@@ -113,7 +113,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao buscar instrutor: ${response.statusText}`);
+      throw new Error(`${response.statusText}`);
     }
 
     // Retorna os dados do instrutor
@@ -121,7 +121,6 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
     const json = JSON.parse(data)
     return await json;
   } catch (error) {
-    console.error('Erro ao buscar instrutor:', error);
     throw error;
   }
 };
@@ -137,13 +136,12 @@ export const updateInstrutor = async (cpf: string, data: IUpdateInstrutor) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Erro: ${response.statusText}`);
+      throw new Error(`${response.statusText}`);
     }
 
     const result = await response.json();
     return result; // Resultado da API
   } catch (error) {
-    console.error('Erro ao atualizar instrutor:', error);
     throw error; // Repassa o erro para ser tratado onde a função for chamada
   }
 };
