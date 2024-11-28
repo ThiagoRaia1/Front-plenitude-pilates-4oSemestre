@@ -64,9 +64,9 @@ const Page = () => {
   const [isJanelaAulasSeguintes, setIsJanelaAulasSeguintes] = useState(false);
   const [cpf, setCpf] = useState('');
 
-  const [dia, setDia] = useState('')
-  const [mes, setMes] = useState('')
-  const [ano, setAno] = useState('')
+  const [dia, setDia] = useState(new Date().getUTCDate().toString().padStart(2, '0'))
+  const [mes, setMes] = useState((new Date().getUTCMonth() + 1).toString().padStart(2, '0'))
+  const [ano, setAno] = useState(new Date().getUTCFullYear().toString())
   const [tipoDeAula, setTipoDeAula] = useState('')
   const [instrutorCpf, setInstrutorCpf] = useState('')
   const [dadosInstrutor, setDadosInstrutor] = useState<IInstrutor | null>(null)
@@ -268,6 +268,7 @@ const Page = () => {
   };
 
   const cadFunc = () => {
+    setHorario("08:00")
     setErrors({})
     setIsModalOpen(!isModalOpen);
   }
