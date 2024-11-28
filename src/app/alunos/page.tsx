@@ -423,7 +423,7 @@ const Page = () => {
               <div className="relative">
                 <a href="/alunos">
                   <button
-                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent bg-white bg-opacity-20 focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
                     ALUNOS
                   </button>
                 </a>

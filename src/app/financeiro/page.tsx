@@ -160,7 +160,7 @@ const Page = () => {
               <div className="relative">
                 <a href="/financeiro">
                   <button
-                    className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent bg-white bg-opacity-20 focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
                     FINANCEIRO
                   </button>
                 </a>
@@ -181,7 +181,7 @@ const Page = () => {
           <div className="flex justify-end gap-4">
             <button
               onClick={abreFechaJanelaCadastro}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[40px]">
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[90px]">
               Registrar novo pagamento
             </button>
           </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { callCreateInstrutor, callCreateUsuario, getInstrutor, getTodos, IInstrutor, ICreateInstrutor, updateInstrutor } from "./api";
 import { useAuth } from "@/context/auth";
 import { z } from "zod";
+import { formataDataBr } from "../alunos/page";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
@@ -77,15 +78,6 @@ const formSchemaCreateUsuario = z.object({
       "Nível de acesso deve ser um dos valores: 1, 2 ou 3"
     ),
 });
-
-function formataDataBr(data: Date) {
-  const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
-  const mes = (data.getUTCMonth() + 1).toString().padStart(2, '0'); // Ajusta o mês (adiciona 1)
-  const ano = data.getUTCFullYear().toString();
-
-  const dataFormatada = `${dia}/${mes}/${ano}`;
-  return dataFormatada;
-}
 
 const Page = () => {
   const { usuario, isAuthenticated, logout } = useAuth();
@@ -508,7 +500,7 @@ const Page = () => {
               <div className="relative">
                 <a href="/equipe">
                   <button
-                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent bg-white bg-opacity-20 focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
                     EQUIPE
                   </button>
                 </a>
