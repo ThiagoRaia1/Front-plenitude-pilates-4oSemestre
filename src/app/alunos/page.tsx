@@ -522,7 +522,6 @@ const Page = () => {
                     </tr>
                   ))}
               </tbody>
-
             </table>
 
             {/* Janela de Cadastro */}

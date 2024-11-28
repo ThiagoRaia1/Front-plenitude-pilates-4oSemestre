@@ -99,6 +99,9 @@ const Page = () => {
   const [isBuscarEditar, setIsBuscarEditar] = useState(false);
   const [isJanelaEditarInstrutor, setIsJanelaEditarInstrutor] = useState(false);
 
+  const [isBuscarExcluir, setIsBuscarExcluir] = useState(false);
+  const [isJanelaExcluirInstrutor, setIsJanelaExcluirInstrutor] = useState(false);
+
   const [nome, setNome] = useState('')
   const [dia, setDia] = useState('')
   const [mes, setMes] = useState('')
@@ -184,6 +187,16 @@ const Page = () => {
   const abreFechaJanelaEditarinstrutor = () => {
     setErrors({});
     setIsJanelaEditarInstrutor(!isJanelaEditarInstrutor);
+  }
+
+  const abreFechaJanelaPesquisarInstrutorParaExcluir = () => {
+    setBuscaCpf('')
+    setErrors({});
+    setIsBuscarExcluir(!isBuscarExcluir);
+  }
+
+  const abreFechaJanelaExcluirInstrutor = () => {
+    setIsJanelaExcluirInstrutor(!isJanelaExcluirInstrutor);
   }
 
   const handlePesquisar = async (event: React.FormEvent) => {
@@ -407,6 +420,64 @@ const Page = () => {
     }
   }
 
+  const handlePesquisarParaExcluir = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      formSchemaCpf.parse({
+        cpf: buscaCpf,
+      });
+      const instrutor: IInstrutor = await getInstrutor(buscaCpf)
+      if (instrutor != null) {
+        setIsBuscarExcluir(!isBuscarExcluir); // Fecha a janela de busca de instrutor por cpf
+        setIsJanelaExcluirInstrutor(!isJanelaExcluirInstrutor); // Abre a janela com os dados do instrutor a ser excluído
+        // Exibe os dados na janela
+        setNome(instrutor.nome)
+        const dataNascimento = new Date(instrutor.dataNascimento)
+        setDia(dataNascimento.getUTCDate().toString().padStart(2, '0'))
+        setMes((dataNascimento.getUTCMonth() + 1).toString().padStart(2, '0'))
+        setAno(dataNascimento.getUTCFullYear().toString())
+        setCpf(instrutor.cpf)
+        setRua(instrutor.rua)
+        setTelefone(instrutor.telefone)
+        setBairro(instrutor.bairro)
+        setCep(instrutor.cep)
+        setCidade(instrutor.cidade)
+        setNumeroRua(instrutor.numeroRua.toString())
+        setNumeroCasa(instrutor.numeroCasa.toString())
+      }
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        // Se ocorrer um erro de validação, configuramos os erros de campo
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors); // Atualiza o estado de erros
+      }
+      if (error.message === "Not Found") {
+        alert("CPF não registrado")
+      }
+    }
+  };
+
+  const excluirInstrutor = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      if (usuario != null) {
+        const updateData = {
+          ultimaAlteracao: usuario.login,
+          dataUltimaAlteracao: new Date(),
+          status: "X",
+        }; // Cria o DTO com os dados a serem enviados
+        await updateInstrutor(cpf, updateData);
+        setIsJanelaExcluirInstrutor(!isJanelaExcluirInstrutor)
+        limpaCampos()
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   return (
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
@@ -486,7 +557,7 @@ const Page = () => {
               Pesquisar funcionario
             </button>
             <button
-              onClick={abreFechaJanelaPesquisarinstrutor}
+              onClick={abreFechaJanelaPesquisarInstrutorParaExcluir}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-[40px]">
               Excluir funcionario
             </button>
@@ -513,23 +584,25 @@ const Page = () => {
                 </tr>
               </thead>
               <tbody>
-                {todos.map((todo) => (
-                  <tr className="text-black text-center align-middle"
-                    key={todo.id}>
-                    <td>{todo.id}</td>
-                    <td>{todo.nome}</td>
-                    <td>{formataDataBr(new Date(todo.dataNascimento))}</td>
-                    <td>{todo.cpf}</td>
-                    <td>{todo.status}</td>
-                    <td>{todo.ultimaAlteracao}</td>
-                    <td>{formataDataBr(new Date(todo.dataUltimaAlteracao))}</td>
-                    {/* <td>{todo.numeroRua}</td>
-                    <td>{todo.numeroCasa}</td> */}
-                    <td>{todo.cep}</td>
-                    <td>{todo.bairro}</td>
-                    <td>{todo.cidade}</td>
-                  </tr>
-                ))}
+                {todos
+                  .filter((todo) => todo.status !== "X")
+                  .map((todo) => (
+                    <tr
+                      className="text-black text-center align-middle"
+                      key={todo.id}
+                    >
+                      <td>{todo.id}</td>
+                      <td>{todo.nome}</td>
+                      <td>{formataDataBr(new Date(todo.dataNascimento))}</td>
+                      <td>{todo.cpf}</td>
+                      <td>{todo.status}</td>
+                      <td>{todo.ultimaAlteracao}</td>
+                      <td>{formataDataBr(new Date(todo.dataUltimaAlteracao))}</td>
+                      <td>{todo.cep}</td>
+                      <td>{todo.bairro}</td>
+                      <td>{todo.cidade}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
 
@@ -1208,6 +1281,218 @@ const Page = () => {
                           onClick={registraUsuario}
                           className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-8 py-2 rounded-lg hover:bg-teal-700">
                           Salvar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Janela para pesquisar o instrutor e apenas exibir seus dados */}
+            {isBuscarExcluir && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px]  border-4 border-[#ececec] p-6  ">
+                  <div className=" w-full h-full border-4 border-[#9f968a] rounded-lg">
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <label
+                        htmlFor="first_name"
+                        className=" ml-4 text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a]">
+                        Digite o CPF do instrutor que quer encontrar:
+                      </label>
+                      <input
+                        type="text"
+                        id="first_name"
+                        placeholder="999.999.999-99"
+                        value={buscaCpf}
+                        onChange={(e) => setBuscaCpf(e.target.value)}
+                        className="ml-3 w-[400] text-black mt-8 rounded-lg border py-2 px-3"
+                      />
+                      {errors.cpf && <p style={{ color: "red" }}>{errors.cpf}</p>}
+                      <div className="flex mt-10 gap-4">
+                        <button
+                          onClick={handlePesquisarParaExcluir}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Pesquisar
+                        </button>
+                        <button
+                          onClick={abreFechaJanelaPesquisarInstrutorParaExcluir}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold  text-[#9f968a] px-8 py-2 rounded-lg hover:bg-teal-700 ">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Janela para mostrar os dados do aluno a ser excluído */}
+            {isJanelaExcluirInstrutor && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
+                  <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
+                    <label
+                      htmlFor="first_name"
+                      className="text-[20px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-2">
+                      Instrutor a ser excluído:
+                    </label>
+                    <div className="w-full  mx-auto">
+                      <div className="mb-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              htmlFor="first_name"
+                              className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Nome:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={nome}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CPF:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={cpf}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Data de nascimento: dd/mm/yyyy
+                            </label>
+                            <input
+                              type="text"
+                              id="dia"
+                              value={dia}
+                              disabled
+                              className="w-[100px] rounded-lg text-black border py-2 px-[8px] mr-2"
+                            />
+                            <input
+                              type="text"
+                              id="mes"
+                              value={mes}
+                              disabled
+                              className="w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                            <input
+                              type="text"
+                              id="ano"
+                              value={ano}
+                              disabled
+                              className="w-[100px] rounded-lg text-black border py-2 mr-2 px-[8px]"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Rua:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={rua}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Telefone:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={telefone}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Bairro:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={bairro}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="first_name" className="text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              CEP:
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              value={cep}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Cidade:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={cidade}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Rua:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={numeroRua}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="last_name" className="block text-[18px] font-[Garet] font-sans font-bold block text-[#9f968a] mb-1">
+                              Numero da Casa:
+                            </label>
+                            <input
+                              type="text"
+                              id="last_name"
+                              value={numeroCasa}
+                              disabled
+                              className="w-80 rounded-lg text-black border py-2 px-3"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-17 flex justify-end gap-4 ml-[936px]">
+                        <button
+                          onClick={abreFechaJanelaExcluirInstrutor}
+                          className="bg-white text-[24px] font-[Garet] font-sans font-bold text-[#9f968a] mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Fechar
+                        </button>
+                        <button
+                          onClick={excluirInstrutor}
+                          className="bg-red-500 text-[24px] font-[Garet] font-sans font-bold text-white mt-[60px] px-4 py-2 rounded-lg hover:bg-teal-700">
+                          Excluir
                         </button>
                       </div>
                     </div>
