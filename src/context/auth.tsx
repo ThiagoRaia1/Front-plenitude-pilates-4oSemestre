@@ -1,5 +1,6 @@
 'use client'
 import { IUsuario } from "@/app/login/api";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface AuthContextType {
@@ -12,8 +13,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   usuario: null,
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -47,9 +48,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, usuario, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <html lang="en">
+      <body>
+        <AuthContext.Provider value={{ isAuthenticated, usuario, login, logout }}>
+          {children}
+        </AuthContext.Provider>
+        <SpeedInsights />
+      </body>
+    </html>
   );
 };
 
