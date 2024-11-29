@@ -4,7 +4,7 @@ import { callCreate, getTodos, IPagamento } from "./api";
 import { useAuth } from "@/context/auth";
 import { z } from 'zod';
 import { getAluno, getAlunoId } from "../alunos/api";
-import { formataDataBr } from "../alunos/page";
+import { formataDataBr } from "@/utils/formataDataBr";
 
 const formSchema = z.object({
   cpf: z.string()

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formataDataBr } from '../alunos/page';
+import { formataDataBr } from "@/utils/formataDataBr";
 import { getAlunoAulas, IAula } from './api';
 import { IAlunoAula } from './api';
 

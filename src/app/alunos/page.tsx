@@ -1,8 +1,9 @@
 "use client"
 import { useEffect, useState } from "react";
-import { callCreate, getAluno, getTodos, IAluno, ICreateAluno, updateAluno } from "./api";
+import { callCreate, getAluno, getTodos, IAluno, updateAluno } from "./api";
 import { useAuth } from "@/context/auth";
 import { z } from 'zod';
+import { formataDataBr } from "@/utils/formataDataBr";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
@@ -54,15 +55,6 @@ const formSchema = z.object({
     .regex(/^\d+$/, { message: "O número da casa deve conter apenas números" })
     .min(1, { message: "Número da casa é obrigatório" }),
 });
-
-export function formataDataBr(data: Date) {
-  const dia = data.getUTCDate().toString().padStart(2, '0'); // Garante que o dia tenha 2 dígitos
-  const mes = (data.getUTCMonth() + 1).toString().padStart(2, '0'); // Ajusta o mês (adiciona 1)
-  const ano = data.getUTCFullYear().toString();
-
-  const dataFormatada = `${dia}/${mes}/${ano}`;
-  return dataFormatada;
-}
 
 const Page = () => {
   const { usuario, isAuthenticated, logout } = useAuth();

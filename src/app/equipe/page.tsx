@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { callCreateInstrutor, callCreateUsuario, getInstrutor, getTodos, IInstrutor, ICreateInstrutor, updateInstrutor } from "./api";
 import { useAuth } from "@/context/auth";
 import { z } from "zod";
-import { formataDataBr } from "../alunos/page";
+import { formataDataBr } from "@/utils/formataDataBr";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
