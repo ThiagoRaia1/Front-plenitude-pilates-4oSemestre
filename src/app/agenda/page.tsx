@@ -1,12 +1,12 @@
 "use client"
 import { useState } from "react";
 import { callCreateAlunoAula, callCreateAula, getAula, getAulas, IAula, IUpdateAula, updateAula, verificaAlunoAula } from "./api";
-import Calendar from "../calendar/page";
+import Calendar from "../components/calendar";
 import { useAuth } from "@/context/auth";
 import { getInstrutor, IInstrutor } from "../equipe/api";
 import { getAluno, IAluno } from "../alunos/api";
 import { z } from "zod";
-import AulaList from "./aulalist";
+import AulaList from "../components/aulalist";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
