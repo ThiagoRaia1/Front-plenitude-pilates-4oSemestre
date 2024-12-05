@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { formataDataBr } from "@/utils/formataDataBr";
-import { getAlunoAulas, IAula } from './api';
-import { IAlunoAula } from './api';
+import { getAlunoAulas, IAula } from '../app/agenda/api';
+import { IAlunoAula } from '../app/agenda/api';
 
 const AulaList = ({ aulas, onSelectAula }: { aulas: IAula[] | null; onSelectAula: (aula: IAula) => void }) => {
     const [selectedAula, setSelectedAula] = useState<IAula | null>(null);
-    const [alunoAulas, setAlunoAulas] = useState<IAlunoAula[] | null>(null);
     const [alunos, setAlunos] = useState<any[]>([]); // Novo estado para armazenar alunos
 
     const aulasFiltradas = aulas?.filter((aula) => {
@@ -21,7 +20,6 @@ const AulaList = ({ aulas, onSelectAula }: { aulas: IAula[] | null; onSelectAula
         const fetchTodos = async () => {
             try {
                 const data = await getAlunoAulas(aula.id); // Pega todos os alunoaula no id aula passado
-                setAlunoAulas(data); // Atualiza o estado com os dados obtidos
 
                 // Extrai os alunos do campo `aluno` de cada `alunoAula`
                 const alunosExtraidos = data.map((alunoAula: IAlunoAula) => alunoAula.aluno);

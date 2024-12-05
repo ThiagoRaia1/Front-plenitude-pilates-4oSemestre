@@ -4,7 +4,7 @@ import { callCreate, getAluno, getTodos, IAluno, updateAluno } from "./api";
 import { useAuth } from "@/context/auth";
 import { z } from 'zod';
 import { formataDataBr } from "@/utils/formataDataBr";
-import MenuPrincipal from "../janelas/menuPrincipal";
+import MenuPrincipal from "@/components/menuPrincipal";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
