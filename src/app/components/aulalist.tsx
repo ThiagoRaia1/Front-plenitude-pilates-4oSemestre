@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { formataDataBr } from "@/utils/formataDataBr";
-import { getAlunoAulas, IAula } from '../app/agenda/api';
-import { IAlunoAula } from '../app/agenda/api';
+import { IAula, getAlunoAulas, IAlunoAula } from '../agenda/api';
 
 const AulaList = ({ aulas, onSelectAula }: { aulas: IAula[] | null; onSelectAula: (aula: IAula) => void }) => {
     const [selectedAula, setSelectedAula] = useState<IAula | null>(null);

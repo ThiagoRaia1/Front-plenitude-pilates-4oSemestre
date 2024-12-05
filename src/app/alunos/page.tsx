@@ -4,7 +4,7 @@ import { callCreate, getAluno, getTodos, IAluno, updateAluno } from "./api";
 import { useAuth } from "@/context/auth";
 import { z } from 'zod';
 import { formataDataBr } from "@/utils/formataDataBr";
-import MenuPrincipal from "@/components/menuPrincipal";
+import MenuPrincipal from "../components/menuPrincipal";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
@@ -396,7 +396,7 @@ const Page = () => {
 
   return (
     <section className="flex h-screen">
-      <div style={{ overflow: "hidden", height: "100vh" }}>
+      <div className="grid md:h-screen md:grid-cols-[350px_1fr]" style={{ overflow: "hidden", height: "100vh" }}>
         <MenuPrincipal/>
       </div>
       <div className="flex-grow p-6 bg-no-repeat bg-cover" style={{ backgroundImage: "url('fundo.png')" }}>
@@ -422,13 +422,13 @@ const Page = () => {
             Excluir aluno
           </button>
         </div>
-        <div className="overflow-x-auto max-h-[650px]">
+        <div className="overflow-x-auto max-h-[600px] mt-8">
           <table
-            className="bg-white w-full max-w-xl mt-16 mx-auto
-                      [&_td]:border-collapse [&_td]:border [&_td]:border-blue-500
-                      [&_th]:border-collapse [&_th]:border [&_th]:border-black [&_th]:py-2 [&_th]:px-4 [&_th]:text-centered">
-            <thead>
-              <tr className="bg-blue-500 text-white">
+            className="bg-white w-full max-w-xl mx-auto
+            [&_td]:border-collapse [&_td]:border [&_td]:border-blue-500
+            [&_th]:border-collapse [&_th]:border [&_th]:border-black [&_th]:py-2 [&_th]:px-4 [&_th]:text-centered">
+            <thead className="sticky top-0 bg-blue-500 text-white z-10">
+              <tr>
                 <th>ID</th>
                 <th>Nome</th>
                 <th>Data de nascimento</th>
@@ -463,7 +463,6 @@ const Page = () => {
                 ))}
             </tbody>
           </table>
-
 
           {/* Janela de Cadastro */}
           {isJanelaCadastro && (
@@ -1278,8 +1277,8 @@ const Page = () => {
             </div>
           )}
         </div>
-      </div >
-    </section >
+      </div>
+    </section>
   )
 }
 
