@@ -23,7 +23,7 @@ export interface ICreatePagamento {
 
 export const callCreate = async (data: ICreatePagamento): Promise<ICreatePagamento> => {
   try {
-    const response = await fetch('http://localhost:3001/pagamento', {
+    const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/pagamento', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -45,14 +45,14 @@ export const callCreate = async (data: ICreatePagamento): Promise<ICreatePagamen
 
 
 export const getTodos = async (): Promise<IPagamento[]> => {
-  const response = await fetch('http://localhost:3001/pagamento')
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/pagamento')
   return await response.json()
 }
 
 export const getPagamento = async (id: number): Promise<IPagamento> => {
   // Faz a requisição ao servidor
   try {
-    const response = await fetch(`http://localhost:3001/alunos/${id}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/alunos/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

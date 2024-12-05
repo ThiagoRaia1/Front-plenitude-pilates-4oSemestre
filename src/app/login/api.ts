@@ -16,7 +16,7 @@ export interface IUsuario {
 }
 
 export const login = async (data: ILoginRequest): Promise<ILoginResponse> => {
-  const response = await fetch('http://localhost:3001/auth/login', {
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ export const login = async (data: ILoginRequest): Promise<ILoginResponse> => {
 };
 
 export const getDadosUsuarioLogado = async (data: ILoginRequest): Promise<IUsuario> => {
-  const response = await fetch('http://localhost:3001/auth/getDadosUsuarioLogado', {
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/auth/getDadosUsuarioLogado', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -59,7 +59,7 @@ export interface IInstrutor {
 }
 
 export const callCreateInstrutor = async (data: ICreateInstrutor): Promise<ICreateInstrutor> => {
-  const response = await fetch('http://localhost:3001/instrutor', {
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/instrutor', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -77,7 +77,7 @@ export const callCreateInstrutor = async (data: ICreateInstrutor): Promise<ICrea
 }
 
 export const callCreateUsuario = async (data: ICreateUsuario): Promise<ICreateUsuario> => {
-  const response = await fetch('http://localhost:3001/usuario', {
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/usuario', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -95,7 +95,7 @@ export const callCreateUsuario = async (data: ICreateUsuario): Promise<ICreateUs
 }
 
 export const getTodos = async (): Promise<IInstrutor[]> => {
-  const response = await fetch(`http://localhost:3001/instrutor`)
+  const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/instrutor`)
   return await response.json()
 }
 
@@ -103,7 +103,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
   // Faz a requisição ao servidor
   // const token = localStorage.getItem('token')
   try {
-    const response = await fetch(`http://localhost:3001/instrutor/${cpf}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/instrutor/${cpf}`, {
       // https://plenitude-pilates-4osemestre.onrender.com/usuario
       method: 'GET',
       headers: {
@@ -127,7 +127,7 @@ export const getInstrutor = async (cpf: string): Promise<any> => {
 
 export const updateInstrutor = async (cpf: string, data: IUpdateInstrutor) => {
   try {
-    const response = await fetch(`http://localhost:3001/instrutor/${cpf}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/instrutor/${cpf}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
