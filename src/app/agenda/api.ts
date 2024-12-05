@@ -12,7 +12,7 @@ export interface ICreateAula {
 }
 
 export const callCreateAula = async (data: ICreateAula): Promise<ICreateAula> => {
-  const response = await fetch('http://localhost:3001/aula', {
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/aula', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -34,7 +34,7 @@ export interface ICreateAlunoAula {
 }
 
 export const callCreateAlunoAula = async (data: ICreateAlunoAula): Promise<ICreateAlunoAula> => {
-  const response = await fetch('http://localhost:3001/alunoaula', {
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/alunoaula', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -62,7 +62,7 @@ export interface IAula {
 }
 
 export const getAulas = async (): Promise<IAula[]> => {
-  const response = await fetch('http://localhost:3001/aula')
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/aula')
   if (!response.ok) {
     throw new Error(response.statusText);
   }
@@ -78,7 +78,7 @@ export interface IAlunoAula {
 export const getAlunoAulas = async (id: number): Promise<IAlunoAula[]> => {
   // Faz a requisição ao servidor
   try {
-    const response = await fetch(`http://localhost:3001/alunoaula/${id}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/alunoaula/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export const getAlunoAulas = async (id: number): Promise<IAlunoAula[]> => {
 export const getAula = async (horaComeco: Date): Promise<any> => {
   // Faz a requisição ao servidor
   try {
-    const response = await fetch(`http://localhost:3001/aula/${horaComeco}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/aula/${horaComeco}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export interface IUpdateAula {
 
 export const updateAula = async (id: number, data: IUpdateAula) => {
   try {
-    const response = await fetch(`http://localhost:3001/aula/${id}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/aula/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ export const updateAula = async (id: number, data: IUpdateAula) => {
 
 export const verificaAlunoAula = async (alunoId: number, aulaId: number): Promise<boolean> => {
   try {
-    const response = await fetch(`http://localhost:3001/alunoaula/verifica`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/alunoaula/verifica`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

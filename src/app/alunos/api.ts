@@ -48,7 +48,7 @@ export interface IAluno {
 }
 
 export const callCreate = async (data: ICreateAluno): Promise<ICreateAluno> => {
-  const response = await fetch('http://localhost:3001/alunos', {
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/alunos', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -71,14 +71,14 @@ export const callCreate = async (data: ICreateAluno): Promise<ICreateAluno> => {
 
 
 export const getTodos = async (): Promise<IAluno[]> => {
-  const response = await fetch('http://localhost:3001/alunos')
+  const response = await fetch('https://plenitude-pilates-4osemestre.onrender.com/alunos')
   return await response.json()
 }
 
 export const getAluno = async (cpf: string): Promise<IAluno> => {
   // Faz a requisição ao servidor
   try {
-    const response = await fetch(`http://localhost:3001/alunos/cpf/${cpf}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/alunos/cpf/${cpf}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export const getAluno = async (cpf: string): Promise<IAluno> => {
 export const getAlunoId = async (id: number): Promise<IAluno> => {
   // Faz a requisição ao servidor
   try {
-    const response = await fetch(`http://localhost:3001/alunos/id/${id}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/alunos/id/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ export const getAlunoId = async (id: number): Promise<IAluno> => {
 
 export const updateAluno = async (cpf: string, data: IUpdateAluno) => {
   try {
-    const response = await fetch(`http://localhost:3001/alunos/${cpf}`, {
+    const response = await fetch(`https://plenitude-pilates-4osemestre.onrender.com/alunos/${cpf}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
