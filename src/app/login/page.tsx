@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 
 const Page = () => {
   const router = useRouter()
-  const { isAuthenticated, login, logout } = useAuth()
+  const { isAuthenticated, login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -31,9 +31,12 @@ const Page = () => {
       const usuario: IUsuario = await getDadosUsuarioLogado({ email, password });
 
       login(usuario, token); // Atualiza o contexto com os dados do usuário e o token
+      console.error(isAuthenticated)
       router.push('/agenda');
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      if (error.message === "Token não encontrado") {
+        alert("Login ou senha incorretos")
+      }
     }
   };
 
