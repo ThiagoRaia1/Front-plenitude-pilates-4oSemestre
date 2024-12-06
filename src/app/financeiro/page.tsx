@@ -138,8 +138,8 @@ const Page = () => {
               className="bg-white w-full max-w-xl mt-16 mx-auto
                       [&_td]:border-collapse [&_td]:border [&_td]:border-blue-500
                       [&_th]:border-collapse [&_th]:border [&_th]:border-black [&_th]:py-2 [&_th]:px-4 [&_th]:text-centered">
-              <thead>
-                <tr className="bg-blue-500 text-white">
+              <thead className="sticky top-0 bg-blue-500 text-white">
+                <tr>
                   <th>ID Pagamento</th>
                   <th>Aluno</th>
                   <th>Status</th>

@@ -7,7 +7,6 @@ import { getInstrutor, IInstrutor } from "../equipe/api";
 import { getAluno, IAluno } from "../alunos/api";
 import { z } from "zod";
 import AulaList from "../components/aulalist";
-import MenuPrincipal from "../components/menuPrincipal";
 
 const formSchemaCpf = z.object({
   cpf: z.string()
@@ -59,7 +58,7 @@ const formSchemaAlunoAula = z.object({
 
 const Page = () => {
   const { usuario, isAuthenticated, logout } = useAuth();
-  const [isJanelaRegistraAula, setIsJanelaRegistraAula] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBuscar, setIsBuscar] = useState(false);
   const [isJanelaAdicionarAlunoAula, setIsJanelaAdicionarAlunoAula] = useState(false);
   const [isJanelaAulasSeguintes, setIsJanelaAulasSeguintes] = useState(false);
@@ -142,7 +141,7 @@ const Page = () => {
                     instrutor,
                   }
                 );
-                setIsJanelaRegistraAula(!isJanelaRegistraAula);
+                setIsModalOpen(!isModalOpen);
               }
             } catch (error: any) {
               if (error.message === "Not Found") {
@@ -277,7 +276,7 @@ const Page = () => {
   const cadFunc = () => {
     setHorario("08:00")
     setErrors({})
-    setIsJanelaRegistraAula(!isJanelaRegistraAula);
+    setIsModalOpen(!isModalOpen);
   }
   const buscar = () => {
     setErrors({})
@@ -318,8 +317,60 @@ const Page = () => {
   return (
     <section>
       <div className="grid md:h-screen md:grid-cols-[350px_1fr]">
-        <MenuPrincipal/>
-        <div className="bg-no-repeat bg-cover" style={{ backgroundImage: "url('fundo.png')" }}>
+        <div className="flex flex-col items-center justify-center bg-[#89b6d5]">
+          <div className="max-w-lg text-center md:px-10 md:py-24 lg:py-32">
+            <img alt="" src="/usuario.png" className="relative  inline-block w-100 h-100" />
+            <div className="mx-auto w-full mt-12 mb-[600px] pb-4 ">
+              <div className="relative">
+                <h1
+                  className="font-bold font-spartan text-[30px] text-white">
+                  Usuario: {usuario?.nome}
+                </h1>
+                <a href="/agenda">
+                  <button
+                    className=" font-bold font-spartan text-[40px] mb-4 block   w-full  text-[#ffffff]  border-2 border-transparent bg-white bg-opacity-20 focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    AGENDA
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/alunos">
+                  <button
+                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    ALUNOS
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/equipe">
+                  <button
+                    className="font-bold font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    EQUIPE
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/financeiro">
+                  <button
+                    className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    FINANCEIRO
+                  </button>
+                </a>
+              </div>
+              <div className="relative">
+                <a href="/login">
+                  <button
+                    onClick={logout}
+                    className="font-bold px-18 font-spartan text-[40px] mb-4 block  w-full  text-[#ffffff]  border-2 border-transparent focus:outline-none hover:bg-white hover:bg-opacity-50 rounded-sm">
+                    LOGOUT
+                  </button>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className=" bg-no-repeat bg-cover  " style={{ backgroundImage: "url('fundo.png')" }}>
           <div className="flex flex justify-end gap-4">
             <button
               onClick={cadFunc}
@@ -345,7 +396,7 @@ const Page = () => {
           </div>
 
           <div>
-            {isJanelaRegistraAula && (
+            {isModalOpen && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
                 <div className="bg-[#ececec] rounded-lg w-[1000px] h-[600px] border-4 border-[#ececec] p-6">
                   <div className="w-full h-full p-8 border-4 border-[#9f968a] rounded-lg">
@@ -609,8 +660,6 @@ const Page = () => {
                 </div>
               </div>
             )}
-
-
           </div>
         </div>
       </div>

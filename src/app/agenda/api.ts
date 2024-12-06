@@ -107,7 +107,7 @@ export const getAula = async (horaComeco: Date): Promise<any> => {
     });
 
     if (!response.ok) {
-      throw new Error(response.statusText);
+      throw new Error("Not Found");
     }
 
     // Retorna os dados do aula

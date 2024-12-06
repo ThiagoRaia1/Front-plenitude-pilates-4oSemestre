@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/context/auth"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { getDadosUsuarioLogado, IUsuario, login as loginApi } from "./api"
 import { useRouter } from 'next/navigation'
 
@@ -10,6 +10,14 @@ const Page = () => {
   const { isAuthenticated, login, logout } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      // Redireciona para a página de Agenda se o usuário estiver autenticado 
+      router.push('/agenda')
+    }
+  }, [router])
 
   const handleLogin = async () => {
     try {
@@ -32,19 +40,7 @@ const Page = () => {
   return (
     <>
       {isAuthenticated ? (
-        <div className="flex flex-col items-center justify-center h-screen">
-          <h1 className="text-4xl font-bold">Você está logado!</h1>
-          <button
-            onClick={() => router.push('/agenda')}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
-            Ir para o menu
-          </button>
-          <button
-            onClick={logout}
-            className="mt-4 bg-blue-500 text-white px-11 py-2 rounded">
-            Logout
-          </button>
-        </div >
+        <></>
       ) : (
         <section>
           <div className="grid md:h-screen md:grid-cols-2">
